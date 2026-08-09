@@ -38,6 +38,11 @@ export function applyStateEffects(
       nextState[key] ?? 0;
 
     if (typeof effect === "number") {
+      if (!Number.isFinite(effect)) {
+        console.warn(`Ignored non-finite numeric effect for "${key}":`, effect);
+        continue;
+      }
+
       nextState[key] = clamp(
         currentValue + effect
       );
@@ -50,16 +55,19 @@ export function applyStateEffects(
       effect !== null
     ) {
       if (effect.operation === "set") {
-        nextState[key] = clamp(
-          effect.value
-        );
+        if (!Number.isFinite(effect.value)) {
+          console.warn(`Ignored non-finite set for "${key}":`, effect.value);
+        } else {
+          nextState[key] = clamp(effect.value);
+        }
       }
 
       if (effect.operation === "add") {
-        nextState[key] = clamp(
-          currentValue +
-            effect.value
-        );
+        if (!Number.isFinite(effect.value)) {
+          console.warn(`Ignored non-finite add for "${key}":`, effect.value);
+        } else {
+          nextState[key] = clamp(currentValue + effect.value);
+        }
       }
     }
   }
