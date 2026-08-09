@@ -4,6 +4,7 @@ export default function QuestCard({
   onComplete,
   onFuckThis,
   onReroll,
+  reason,
 }) {
   if (!quest) {
     return (
@@ -56,6 +57,12 @@ export default function QuestCard({
       <h1>
         {quest.title}
       </h1>
+
+      {reason && (
+        <p className="quest-reason">
+          WHY THIS QUEST? {reason}
+        </p>
+      )}
 
       {quest.description && (
         <p className="quest-description">

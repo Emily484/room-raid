@@ -14,6 +14,7 @@ import { Routes, Route, NavLink } from "react-router-dom";
 import {
   getNextQuest,
 } from "./game/questEngine";
+import { getQuestReason } from "./game/questEngine";
 
 import {
   useGameState,
@@ -227,6 +228,7 @@ function App() {
             {currentQuest ? (
               <QuestCard
                 quest={currentQuest}
+                reason={getQuestReason(currentQuest)}
                 difficulty={difficulty}
                 onComplete={handleComplete}
                 onFuckThis={handleFuckThis}
