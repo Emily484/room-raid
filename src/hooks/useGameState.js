@@ -271,9 +271,25 @@ export function useGameState() {
     );
   }
 
+  function applyEffectsToRoom(effects) {
+    setGame((current) => {
+      const nextRoomState =
+        applyStateEffects(
+          current.roomState,
+          effects
+        );
+
+      return {
+        ...current,
+        roomState: nextRoomState,
+      };
+    });
+  }
+
   return {
     game,
     completeQuest,
     resetGame,
+    applyEffectsToRoom,
   };
 }
