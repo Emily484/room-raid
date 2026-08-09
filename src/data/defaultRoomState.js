@@ -1,7 +1,7 @@
 export const defaultRoomState = {
-  clothingOnFloor: 90,
-  looseClothing: 80,
-  cleanClothesOut: 70,
+  clothingOnFloor: 30,
+  looseClothing: 18,
+  cleanClothesOut: 50,
 
   cardboard: 30,
   loosePackaging: 45,
