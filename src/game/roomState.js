@@ -13,16 +13,12 @@ export function applyStateEffects(
     ...roomState,
   };
 
-  for (const [key, effect] of Object.entries(effects)) {
+  for (
+    const [key, effect]
+    of Object.entries(effects)
+  ) {
     const currentValue =
       nextState[key] ?? 0;
-
-    // Simple numeric effect:
-    //
-    // floorClutter: -10
-    // exposedFloor: 8
-    //
-    // means ADD that amount.
 
     if (typeof effect === "number") {
       nextState[key] = clamp(
@@ -31,13 +27,6 @@ export function applyStateEffects(
 
       continue;
     }
-
-    // Future-proof format:
-    //
-    // bedMade: {
-    //   operation: "set",
-    //   value: 100
-    // }
 
     if (
       typeof effect === "object" &&
@@ -51,7 +40,8 @@ export function applyStateEffects(
 
       if (effect.operation === "add") {
         nextState[key] = clamp(
-          currentValue + effect.value
+          currentValue +
+            effect.value
         );
       }
     }
