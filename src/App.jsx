@@ -7,8 +7,9 @@ import PlayerStats from "./components/PlayerStats";
 import ZoneSelector from "./components/ZoneSelector";
 import BossBar from "./components/BossBar";
 import QuestCard from "./components/QuestCard";
-import RoomStateDebug from "./components/RoomStateDebug";
-import RoomInspector from "./components/RoomInspector";
+import RoomStateDebug from "./components/DevPage/RoomStateDebug";
+import DeveloperPage from "./components/DevPage/DeveloperPage";
+import { Routes, Route, NavLink } from "react-router-dom";
 
 import {
   getNextQuest,
@@ -28,6 +29,8 @@ function App() {
     currentQuest,
     setCurrentQuest,
   ] = useState(null);
+
+  // routing handled by react-router
 
   const [
     difficulty,
@@ -176,103 +179,73 @@ function App() {
   }
 
   return (
-    <main className="app">
-      <header>
-        <div>
-          <p className="eyebrow">
-            CLEANING RPG
-          </p>
+    <>
+      <nav className="breadcrumb">
+        <NavLink to="/" className={({isActive}) => isActive ? 'current' : ''}>Home</NavLink>
+        <span className="sep">›</span>
+        <NavLink to="/dev" className={({isActive}) => isActive ? 'current' : ''}>Developer</NavLink>
+      </nav>
 
-          <h1>
-            ROOM RAID
-          </h1>
+      <Routes>
+      <Route
+        path="/"
+        element={
+          <main className="app">
+            <header>
+              <div>
+                <p className="eyebrow">CLEANING RPG</p>
 
-          <p>
-            Your possessions have
-            become hostile.
-          </p>
-        </div>
-      </header>
+                <h1>ROOM RAID</h1>
 
-      <PlayerStats
-        xp={game.xp}
-        completedQuests={
-          game.completedQuests
+                <p>Your possessions have become hostile.</p>
+              </div>
+            </header>
+
+            <PlayerStats xp={game.xp} completedQuests={game.completedQuests} />
+
+            <ZoneSelector
+              selectedZone={selectedZone}
+              setSelectedZone={changeZone}
+            />
+
+            <BossBar zoneId={selectedZone} bosses={game.bosses} />
+
+            <p className="message">{message}</p>
+
+            {currentQuest ? (
+              <QuestCard
+                quest={currentQuest}
+                difficulty={difficulty}
+                onComplete={handleComplete}
+                onFuckThis={handleFuckThis}
+                onReroll={newQuest}
+              />
+            ) : (
+              <section className="quest-card">
+                <div className="quest-label">QUEST LOG</div>
+
+                <h2>No quests available.</h2>
+
+                <p>
+                  This territory may be cleared, or later tasks may still be
+                  locked.
+                </p>
+              </section>
+            )}
+
+            <button className="reset" onClick={handleReset}>
+              Reset Game
+            </button>
+          </main>
         }
       />
 
-      <ZoneSelector
-        selectedZone={
-          selectedZone
-        }
-        setSelectedZone={
-          changeZone
-        }
+      <Route
+        path="/dev"
+        element={<DeveloperPage game={game} applyEffects={applyEffectsToRoom} />}
       />
-
-      <BossBar
-        zoneId={selectedZone}
-        bosses={game.bosses}
-      />
-
-      <p className="message">
-        {message}
-      </p>
-
-      {currentQuest ? (
-        <QuestCard
-          quest={
-            currentQuest
-          }
-          difficulty={
-            difficulty
-          }
-          onComplete={
-            handleComplete
-          }
-          onFuckThis={
-            handleFuckThis
-          }
-          onReroll={
-            newQuest
-          }
-        />
-      ) : (
-        <section className="quest-card">
-          <div className="quest-label">
-            QUEST LOG
-          </div>
-
-          <h2>
-            No quests available.
-          </h2>
-
-          <p>
-            This territory may be
-            cleared, or later tasks
-            may still be locked.
-          </p>
-        </section>
-      )}
-
-      <RoomStateDebug
-        roomState={game.roomState}
-      />
-
-      <RoomInspector
-        game={game}
-        applyEffects={applyEffectsToRoom}
-      />
-
-      <button
-        className="reset"
-        onClick={
-          handleReset
-        }
-      >
-        Reset Game
-      </button>
-    </main>
+      </Routes>
+    </>
   );
 }
 

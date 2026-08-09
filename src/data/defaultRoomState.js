@@ -9,7 +9,6 @@ export const defaultRoomState = {
   floorTrash: 8,
   miscellaneousFloorItems: 50,
   floorObstruction: 20,
-
   floorCleanliness: 80,
 
   tableTrash: 30,
@@ -27,5 +26,5 @@ export const defaultRoomState = {
 
   mirrorDirty: 45,
   tubClutter: 25,
-  tubCleanliness: 50
+  tubCleanliness: 50,
 };
