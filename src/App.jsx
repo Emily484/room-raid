@@ -44,6 +44,14 @@ function App() {
     "The dungeon awaits."
   );
 
+  const [
+    session,
+    setSession,
+  ] = useState({
+    energy: "normal",
+    preferredQuestMinutes: 10,
+  });
+
   const {
     game,
     completeQuest,
@@ -65,7 +73,9 @@ function App() {
         selectedZone,
         game.roomState,
         game.completedQuestIds,
-        game.recentQuestIds
+        game.recentQuestIds,
+        null,
+        session
       );
 
     setCurrentQuest(quest);
@@ -81,6 +91,7 @@ function App() {
     game.roomState,
     game.completedQuestIds,
     game.recentQuestIds,
+    session,
   ]);
 
   function newQuest() {
@@ -90,7 +101,8 @@ function App() {
         game.roomState,
         game.completedQuestIds,
         game.recentQuestIds,
-        currentQuest?.id
+        currentQuest?.id,
+        session
       );
 
     setCurrentQuest(quest);
