@@ -13,10 +13,27 @@ export function applyStateEffects(
     ...roomState,
   };
 
+  // Keys that are computed from concrete state and must
+  // never be directly written by quests or other effects.
+  const DERIVED_KEYS = new Set([
+    "floorClutter",
+    "exposedFloor",
+    "floorReadiness",
+    "exposedSurface",
+    "bathroomCounterClear",
+  ]);
+
   for (
     const [key, effect]
     of Object.entries(effects)
   ) {
+    if (DERIVED_KEYS.has(key)) {
+      console.warn(
+        `Attempted to modify derived state "${key}" via stateEffects. This is ignored.`
+      );
+
+      continue;
+    }
     const currentValue =
       nextState[key] ?? 0;
 
