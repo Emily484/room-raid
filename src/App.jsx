@@ -3,22 +3,51 @@ import {
   useState,
 } from "react";
 
+import {
+  Routes,
+  Route,
+  NavLink,
+} from "react-router-dom";
+
 import PlayerStats from "./components/PlayerStats";
 import ZoneSelector from "./components/ZoneSelector";
 import BossBar from "./components/BossBar";
 import QuestCard from "./components/QuestCard";
-import RoomStateDebug from "./components/DevPage/RoomStateDebug";
+import SessionControls from "./components/SessionControls";
+
 import DeveloperPage from "./components/DevPage/DeveloperPage";
-import { Routes, Route, NavLink } from "react-router-dom";
 
 import {
   getNextQuest,
 } from "./game/questEngine";
-import { getQuestReason } from "./game/questEngine";
 
 import {
   useGameState,
 } from "./hooks/useGameState";
+
+function getQuestReason(quest) {
+  if (!quest) {
+    return "";
+  }
+
+  if (quest.tags?.includes("boss")) {
+    return "Boss vulnerability detected";
+  }
+
+  if (quest.stage >= 3) {
+    return "Advances dungeon progression";
+  }
+
+  if (quest.priority >= 90) {
+    return "High-impact problem";
+  }
+
+  if (quest.priority >= 75) {
+    return "Strong next move";
+  }
+
+  return "Useful progress";
+}
 
 function App() {
   const [
@@ -30,8 +59,6 @@ function App() {
     currentQuest,
     setCurrentQuest,
   ] = useState(null);
-
-  // routing handled by react-router
 
   const [
     difficulty,
@@ -59,14 +86,6 @@ function App() {
     resetGame,
     applyEffectsToRoom,
   } = useGameState();
-
-  // --------------------------------
-  // Generate a quest whenever:
-  //
-  // - zone changes
-  // - room state changes
-  // - permanent quests are completed
-  // --------------------------------
 
   useEffect(() => {
     const quest =
@@ -109,15 +128,11 @@ function App() {
     setCurrentQuest(quest);
     setDifficulty(0);
 
-    if (quest) {
-      setMessage(
-        "A different horror approaches."
-      );
-    } else {
-      setMessage(
-        "No other quests are currently available."
-      );
-    }
+    setMessage(
+      quest
+        ? "A different horror approaches."
+        : "No other quests are currently available."
+    );
   }
 
   function handleComplete(
@@ -134,15 +149,8 @@ function App() {
       );
 
     setMessage(
-      `⚔️ Enemy slain. +${reward.xpEarned} XP. ${reward.damage} damage dealt.`
+      `⚔ Quest complete. +${reward.xpEarned} XP · ${reward.damage} damage dealt.`
     );
-
-    // Do NOT manually generate
-    // another quest here.
-    //
-    // game.roomState changes,
-    // which triggers the useEffect
-    // above with fresh state.
   }
 
   function handleFuckThis() {
@@ -158,12 +166,12 @@ function App() {
 
       setMessage(
         difficulty === 0
-          ? "Fine. The quest has been made less awful."
-          : "Jesus Christ. One tiny thing. That's it."
+          ? "Fine. The quest has been reduced."
+          : "One tiny thing. That's the entire assignment."
       );
     } else {
       setMessage(
-        "This quest literally cannot get smaller."
+        "This quest cannot physically get smaller."
       );
     }
   }
@@ -174,11 +182,10 @@ function App() {
     setDifficulty(0);
 
     setMessage(
-      "Entering new territory..."
+      zone === "random"
+        ? "The engine is surveying the entire dungeon."
+        : "Focusing on selected territory."
     );
-
-    // useEffect handles the
-    // new quest.
   }
 
   function handleReset() {
@@ -193,71 +200,158 @@ function App() {
 
   return (
     <>
-      <nav className="breadcrumb">
-        <NavLink to="/" className={({isActive}) => isActive ? 'current' : ''}>Home</NavLink>
-        <span className="sep">›</span>
-        <NavLink to="/dev" className={({isActive}) => isActive ? 'current' : ''}>Developer</NavLink>
+      <nav className="site-nav">
+        <NavLink
+          to="/"
+          className={({ isActive }) =>
+            isActive
+              ? "current"
+              : ""
+          }
+        >
+          Room Raid
+        </NavLink>
+
+        <NavLink
+          to="/dev"
+          className={({ isActive }) =>
+            isActive
+              ? "current"
+              : ""
+          }
+        >
+          Developer
+        </NavLink>
       </nav>
 
       <Routes>
-      <Route
-        path="/"
-        element={
-          <main className="app">
-            <header>
-              <div>
-                <p className="eyebrow">CLEANING RPG</p>
+        <Route
+          path="/"
+          element={
+            <main className="app">
+              <header className="game-header">
+                <p className="eyebrow">
+                  CLEANING RPG
+                </p>
 
-                <h1>ROOM RAID</h1>
-
-                <p>Your possessions have become hostile.</p>
-              </div>
-            </header>
-
-            <PlayerStats xp={game.xp} completedQuests={game.completedQuests} />
-
-            <ZoneSelector
-              selectedZone={selectedZone}
-              setSelectedZone={changeZone}
-            />
-
-            <BossBar zoneId={selectedZone} bosses={game.bosses} />
-
-            <p className="message">{message}</p>
-
-            {currentQuest ? (
-              <QuestCard
-                quest={currentQuest}
-                reason={getQuestReason(currentQuest)}
-                difficulty={difficulty}
-                onComplete={handleComplete}
-                onFuckThis={handleFuckThis}
-                onReroll={newQuest}
-              />
-            ) : (
-              <section className="quest-card">
-                <div className="quest-label">QUEST LOG</div>
-
-                <h2>No quests available.</h2>
+                <h1>
+                  ROOM RAID
+                </h1>
 
                 <p>
-                  This territory may be cleared, or later tasks may still be
-                  locked.
+                  Your possessions have
+                  become hostile.
                 </p>
-              </section>
-            )}
+              </header>
 
-            <button className="reset" onClick={handleReset}>
-              Reset Game
-            </button>
-          </main>
-        }
-      />
+              <PlayerStats
+                xp={game.xp}
+                completedQuests={
+                  game.completedQuests
+                }
+              />
 
-      <Route
-        path="/dev"
-        element={<DeveloperPage game={game} applyEffects={applyEffectsToRoom} />}
-      />
+              <SessionControls
+                session={session}
+                setSession={
+                  setSession
+                }
+              />
+
+              <ZoneSelector
+                selectedZone={
+                  selectedZone
+                }
+                setSelectedZone={
+                  changeZone
+                }
+              />
+
+              {selectedZone !==
+                "random" && (
+                <BossBar
+                  zoneId={
+                    selectedZone
+                  }
+                  bosses={
+                    game.bosses
+                  }
+                />
+              )}
+
+              <div className="game-message">
+                {message}
+              </div>
+
+              {currentQuest ? (
+                <QuestCard
+                  quest={
+                    currentQuest
+                  }
+                  difficulty={
+                    difficulty
+                  }
+                  reason={getQuestReason(
+                    currentQuest
+                  )}
+                  onComplete={
+                    handleComplete
+                  }
+                  onFuckThis={
+                    handleFuckThis
+                  }
+                  onReroll={
+                    newQuest
+                  }
+                />
+              ) : (
+                <section className="quest-card">
+                  <div className="quest-label">
+                    QUEST LOG
+                  </div>
+
+                  <h2>
+                    No quests available.
+                  </h2>
+
+                  <p>
+                    This territory may
+                    be cleared or its
+                    remaining tasks may
+                    still be locked.
+                  </p>
+                </section>
+              )}
+
+              <details className="game-settings">
+                <summary>
+                  Game settings
+                </summary>
+
+                <button
+                  className="reset"
+                  onClick={
+                    handleReset
+                  }
+                >
+                  Reset Game
+                </button>
+              </details>
+            </main>
+          }
+        />
+
+        <Route
+          path="/dev"
+          element={
+            <DeveloperPage
+              game={game}
+              applyEffects={
+                applyEffectsToRoom
+              }
+            />
+          }
+        />
       </Routes>
     </>
   );
