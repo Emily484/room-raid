@@ -1,0 +1,252 @@
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import { zones } from "../data/zones";
+
+import {
+  defaultRoomState,
+} from "../data/defaultRoomState";
+
+import {
+  applyStateEffects,
+} from "../game/roomState";
+
+const STORAGE_KEY =
+  "roomRaidGame";
+
+function makeInitialBosses() {
+  return Object.fromEntries(
+    zones.map((zone) => [
+      zone.id,
+      {
+        hp: zone.maxHp,
+        maxHp: zone.maxHp,
+      },
+    ])
+  );
+}
+
+function createInitialState() {
+  return {
+    xp: 0,
+
+    completedQuests: 0,
+
+    completedQuestIds: [],
+
+    recentQuestIds: [],
+
+    roomState: {
+      ...defaultRoomState,
+    },
+
+    bosses:
+      makeInitialBosses(),
+  };
+}
+
+export function useGameState() {
+  const [game, setGame] =
+    useState(() => {
+      const saved =
+        localStorage.getItem(
+          STORAGE_KEY
+        );
+
+      if (!saved) {
+        return createInitialState();
+      }
+
+      try {
+        const parsed =
+          JSON.parse(saved);
+
+        return {
+          ...createInitialState(),
+          ...parsed,
+
+          roomState: {
+            ...defaultRoomState,
+            ...(parsed.roomState ??
+              {}),
+          },
+
+          bosses: {
+            ...makeInitialBosses(),
+            ...(parsed.bosses ??
+              {}),
+          },
+
+          completedQuestIds:
+            parsed.completedQuestIds ??
+            [],
+
+          recentQuestIds:
+            parsed.recentQuestIds ??
+            [],
+        };
+      } catch (error) {
+        console.error(
+          "Could not load saved Room Raid data:",
+          error
+        );
+
+        return createInitialState();
+      }
+    });
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(game)
+    );
+  }, [game]);
+
+  function completeQuest(
+    quest,
+    variantKey = "normal"
+  ) {
+    if (!quest) {
+      console.error(
+        "completeQuest called without a quest"
+      );
+
+      return {
+        xpEarned: 0,
+        damage: 0,
+      };
+    }
+
+    const variant =
+      quest.variants?.[
+        variantKey
+      ];
+
+    if (!variant) {
+      console.error(
+        `Quest "${quest.id}" does not have variant "${variantKey}".`
+      );
+
+      return {
+        xpEarned: 0,
+        damage: 0,
+      };
+    }
+
+    const xpEarned =
+      variant.xp ?? 0;
+
+    const damage =
+      variant.damage ?? 0;
+
+    setGame((current) => {
+      const boss =
+        current.bosses?.[
+          quest.zoneId
+        ];
+
+      if (!boss) {
+        console.error(
+          `No boss found for zone "${quest.zoneId}".`
+        );
+
+        return current;
+      }
+
+      const completedQuestIds =
+        current.completedQuestIds ??
+        [];
+
+      const alreadyRecorded =
+        completedQuestIds.includes(
+          quest.id
+        );
+
+      const shouldRecordCompletion =
+        !quest.repeatable &&
+        !alreadyRecorded;
+
+      // --------------------------------
+      // THE IMPORTANT NEW PART
+      // --------------------------------
+
+      const nextRoomState =
+        applyStateEffects(
+          current.roomState,
+          variant.stateEffects
+        );
+
+      // Keep the five most recent quest
+      // types so the engine can avoid
+      // annoying repetition.
+
+      const nextRecentQuestIds = [
+        quest.id,
+        ...(current.recentQuestIds ??
+          []).filter(
+          (id) =>
+            id !== quest.id
+        ),
+      ].slice(0, 5);
+
+      return {
+        ...current,
+
+        xp:
+          (current.xp ?? 0) +
+          xpEarned,
+
+        completedQuests:
+          (current.completedQuests ??
+            0) + 1,
+
+        roomState:
+          nextRoomState,
+
+        recentQuestIds:
+          nextRecentQuestIds,
+
+        completedQuestIds:
+          shouldRecordCompletion
+            ? [
+                ...completedQuestIds,
+                quest.id,
+              ]
+            : completedQuestIds,
+
+        bosses: {
+          ...current.bosses,
+
+          [quest.zoneId]: {
+            ...boss,
+
+            hp: Math.max(
+              0,
+              boss.hp -
+                damage
+            ),
+          },
+        },
+      };
+    });
+
+    return {
+      xpEarned,
+      damage,
+    };
+  }
+
+  function resetGame() {
+    setGame(
+      createInitialState()
+    );
+  }
+
+  return {
+    game,
+    completeQuest,
+    resetGame,
+  };
+}

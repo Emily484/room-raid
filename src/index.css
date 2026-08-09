@@ -1,0 +1,211 @@
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #eee;
+  background: #111;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top, #28202d, #111 50%);
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+}
+
+.app {
+  width: min(900px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 48px 0 100px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: clamp(42px, 8vw, 80px);
+  letter-spacing: -0.05em;
+}
+
+header p {
+  color: #aaa;
+}
+
+.eyebrow,
+.quest-label {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: #b891c7;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 32px 0;
+}
+
+.stats > div {
+  background: #1c1c1c;
+  border: 1px solid #333;
+  padding: 18px;
+  border-radius: 12px;
+}
+
+.stats span {
+  display: block;
+  color: #999;
+  font-size: 12px;
+}
+
+.stats strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 28px;
+}
+
+.xp-progress {
+  grid-column: 1 / -1;
+}
+
+.bar,
+.boss-bar {
+  height: 12px;
+  background: #292929;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.bar-fill {
+  height: 100%;
+  background: #a96abb;
+}
+
+.zone-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.zone-buttons button,
+.quest-actions button,
+.reset {
+  border: 1px solid #444;
+  background: #202020;
+  color: white;
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.zone-buttons button:hover,
+.quest-actions button:hover {
+  background: #292929;
+}
+
+.zone-buttons .active {
+  background: #5c3269;
+  border-color: #a96abb;
+}
+
+.boss {
+  margin: 28px 0;
+  background: #181818;
+  border: 1px solid #333;
+  padding: 20px;
+  border-radius: 14px;
+}
+
+.boss-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.boss h2 {
+  margin: 4px 0;
+}
+
+.boss-health {
+  height: 100%;
+  background: #ad343e;
+  transition: width 0.3s ease;
+}
+
+.victory {
+  color: #c5ffb8;
+  font-weight: bold;
+}
+
+.quest-card {
+  margin-top: 24px;
+  padding: 32px;
+  border: 1px solid #444;
+  background: #191919;
+  border-radius: 16px;
+}
+
+.quest-card h1 {
+  margin-bottom: 12px;
+}
+
+.quest-task {
+  font-size: 22px;
+  line-height: 1.5;
+}
+
+.reward {
+  margin: 24px 0;
+  font-weight: bold;
+  color: #c8a5d2;
+}
+
+.quest-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.quest-actions .complete {
+  background: #5c3269;
+  border-color: #a96abb;
+}
+
+.quest-actions .fuck-this {
+  background: #4b2226;
+  border-color: #8d3d44;
+}
+
+.message {
+  min-height: 24px;
+  color: #bbb;
+  font-style: italic;
+}
+
+.reset {
+  margin-top: 40px;
+  opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quest-card {
+    padding: 20px;
+  }
+
+  .quest-task {
+    font-size: 18px;
+  }
+
+  .quest-actions button {
+    width: 100%;
+  }
+}
