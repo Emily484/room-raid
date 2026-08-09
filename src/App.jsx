@@ -7,8 +7,8 @@ import PlayerStats from "./components/PlayerStats";
 import ZoneSelector from "./components/ZoneSelector";
 import BossBar from "./components/BossBar";
 import QuestCard from "./components/QuestCard";
-import RoomStateDebug from "./components/RoomStateDebug";
-import DeveloperPage from "./components/DeveloperPage";
+import RoomStateDebug from "./components/DevPage/RoomStateDebug";
+import DeveloperPage from "./components/DevPage/DeveloperPage";
 import { Routes, Route, NavLink } from "react-router-dom";
 
 import {
