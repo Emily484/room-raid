@@ -1,6 +1,7 @@
-// src/game/questEngine.js
-
 import { quests } from "../data/quests";
+import {
+  calculateDerivedState,
+} from "./derivedState";
 
 function checkRequirement(
   requirement,
@@ -82,11 +83,15 @@ export function getAvailableQuests(
   roomState,
   completedQuestIds = []
 ) {
-  return quests.filter((quest) => {
-    // -------------------------
-    // Correct zone?
-    // -------------------------
+  const derivedState =
+    calculateDerivedState(roomState);
 
+  const fullState = {
+    ...roomState,
+    ...derivedState,
+  };
+
+  return quests.filter((quest) => {
     const correctZone =
       !zoneId ||
       zoneId === "random" ||
@@ -96,22 +101,14 @@ export function getAvailableQuests(
       return false;
     }
 
-    // -------------------------
-    // Room conditions satisfied?
-    // -------------------------
-
     if (
       !questMeetsRequirements(
         quest,
-        roomState
+        fullState
       )
     ) {
       return false;
     }
-
-    // -------------------------
-    // Already permanently done?
-    // -------------------------
 
     const alreadyCompleted =
       completedQuestIds.includes(
@@ -134,6 +131,13 @@ export function scoreQuest(
   roomState,
   recentQuestIds = []
 ) {
+  const fullState = {
+    ...roomState,
+    ...calculateDerivedState(
+      roomState
+    ),
+  };
+
   let score =
     quest.priority ?? 50;
 
@@ -146,7 +150,7 @@ export function scoreQuest(
     of quest.requirements ?? []
   ) {
     const value =
-      roomState?.[
+      fullState?.[
         requirement.key
       ];
 
