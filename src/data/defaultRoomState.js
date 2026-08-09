@@ -28,4 +28,4 @@ export const defaultRoomState = {
   mirrorDirty: 45,
   tubClutter: 25,
   tubCleanliness: 50
-}
+};

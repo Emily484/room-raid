@@ -8,6 +8,7 @@ import ZoneSelector from "./components/ZoneSelector";
 import BossBar from "./components/BossBar";
 import QuestCard from "./components/QuestCard";
 import RoomStateDebug from "./components/RoomStateDebug";
+import RoomInspector from "./components/RoomInspector";
 
 import {
   getNextQuest,
@@ -44,6 +45,7 @@ function App() {
     game,
     completeQuest,
     resetGame,
+    applyEffectsToRoom,
   } = useGameState();
 
   // --------------------------------
@@ -255,6 +257,11 @@ function App() {
 
       <RoomStateDebug
         roomState={game.roomState}
+      />
+
+      <RoomInspector
+        game={game}
+        applyEffects={applyEffectsToRoom}
       />
 
       <button
