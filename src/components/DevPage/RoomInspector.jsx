@@ -1,14 +1,23 @@
 import { useState } from "react";
 import { calculateDerivedState } from "../../game/derivedState";
 
+const correctionFactors = {
+  muchLess: 0.5,
+  less: 0.75,
+  more: 1.25,
+  muchMore: 1.5,
+};
+
 export default function RoomInspector({
   game,
   applyEffects,
 }) {
-  const derived =
-    calculateDerivedState(
-      game.roomState
-    );
+  const derived = calculateDerivedState(
+    game.roomState
+  );
+
+  const [directValues, setDirectValues] =
+    useState({});
 
   const fields = [
     {
@@ -29,6 +38,84 @@ export default function RoomInspector({
     },
   ];
 
+  function handleRelativeCorrection(
+    key,
+    type
+  ) {
+    const current =
+      game.roomState[key] ?? 0;
+
+    if (type === "looksRight") {
+      return;
+    }
+
+    const factor =
+      correctionFactors[type];
+
+    const target =
+      Math.round(current * factor);
+
+    const delta =
+      target - current;
+
+    applyEffects({
+      [key]: delta,
+    });
+  }
+
+  function handleDirectChange(
+    key,
+    value
+  ) {
+    setDirectValues((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  function handleDirectSet(key) {
+    const rawValue =
+      directValues[key];
+
+    if (
+      rawValue === undefined ||
+      rawValue === ""
+    ) {
+      return;
+    }
+
+    const parsed =
+      Number(rawValue);
+
+    if (Number.isNaN(parsed)) {
+      return;
+    }
+
+    const target =
+      Math.max(
+        0,
+        Math.min(
+          100,
+          parsed
+        )
+      );
+
+    const current =
+      game.roomState[key] ?? 0;
+
+    const delta =
+      target - current;
+
+    applyEffects({
+      [key]: delta,
+    });
+
+    setDirectValues((current) => ({
+      ...current,
+      [key]: "",
+    }));
+  }
+
   return (
     <div className="room-inspector">
       <div className="room-inspector-panel">
@@ -46,28 +133,67 @@ export default function RoomInspector({
                 </span>
 
                 <strong className="room-state-value">
-                  {game.roomState[field.key]}
+                  {
+                    game.roomState[
+                      field.key
+                    ]
+                  }
                 </strong>
               </div>
 
               <div className="room-adjustments">
-                <button>
+                <button
+                  onClick={() =>
+                    handleRelativeCorrection(
+                      field.key,
+                      "muchLess"
+                    )
+                  }
+                >
                   Much less
                 </button>
 
-                <button>
+                <button
+                  onClick={() =>
+                    handleRelativeCorrection(
+                      field.key,
+                      "less"
+                    )
+                  }
+                >
                   Less
                 </button>
 
-                <button>
+                <button
+                  onClick={() =>
+                    handleRelativeCorrection(
+                      field.key,
+                      "looksRight"
+                    )
+                  }
+                >
                   Looks right
                 </button>
 
-                <button>
+                <button
+                  onClick={() =>
+                    handleRelativeCorrection(
+                      field.key,
+                      "more"
+                    )
+                  }
+                >
                   More
                 </button>
 
-                <button>
+                <button
+                  onClick={() =>
+                    handleRelativeCorrection(
+                      field.key,
+                      "muchMore"
+                    )
+                  }
+                >
                   Much more
                 </button>
               </div>
@@ -77,10 +203,28 @@ export default function RoomInspector({
                   type="number"
                   min="0"
                   max="100"
+                  value={
+                    directValues[
+                      field.key
+                    ] ?? ""
+                  }
                   placeholder="Direct"
+                  onChange={(event) =>
+                    handleDirectChange(
+                      field.key,
+                      event.target
+                        .value
+                    )
+                  }
                 />
 
-                <button>
+                <button
+                  onClick={() =>
+                    handleDirectSet(
+                      field.key
+                    )
+                  }
+                >
                   Set
                 </button>
               </div>
@@ -101,7 +245,9 @@ export default function RoomInspector({
             </span>
 
             <strong>
-              {derived.floorClutter.toFixed(2)}
+              {derived.floorClutter.toFixed(
+                2
+              )}
             </strong>
           </div>
 
@@ -111,7 +257,9 @@ export default function RoomInspector({
             </span>
 
             <strong>
-              {derived.exposedFloor.toFixed(2)}
+              {derived.exposedFloor.toFixed(
+                2
+              )}
             </strong>
           </div>
 
@@ -121,14 +269,12 @@ export default function RoomInspector({
             </span>
 
             <strong>
-              {derived.floorReadiness.toFixed(2)}
+              {derived.floorReadiness.toFixed(
+                2
+              )}
             </strong>
           </div>
         </div>
-
-        <button className="correct-state-button">
-          Correct Room State
-        </button>
       </div>
     </div>
   );

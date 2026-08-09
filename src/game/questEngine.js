@@ -187,7 +187,30 @@ export function explainAllQuests(roomState, recentQuestIds = [], session = { ene
   });
 }
 
-function weightedRandom(
+// Lightweight UI helper that gives a short human-friendly reason
+export function getQuestReason(quest) {
+  if (!quest) return "";
+
+  if (quest.tags?.includes("boss")) {
+    return "Boss vulnerability detected";
+  }
+
+  if (quest.stage >= 3) {
+    return "Progression task";
+  }
+
+  if (quest.priority >= 90) {
+    return "High-impact problem";
+  }
+
+  if (quest.priority >= 75) {
+    return "Strong next move";
+  }
+
+  return "Useful progress";
+}
+
+export function weightedRandom(
   scoredQuests
 ) {
   const totalWeight =

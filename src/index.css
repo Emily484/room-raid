@@ -192,6 +192,191 @@ header p {
   opacity: 0.6;
 }
 
+/* =========================================================
+   SESSION CONTROLS
+   ========================================================= */
+
+.session-controls {
+  margin: 28px 0;
+  padding: 20px;
+  background: #19171b;
+  border: 1px solid #343038;
+  border-radius: 14px;
+}
+
+.session-heading h2 {
+  margin: 3px 0 18px;
+  font-size: 20px;
+}
+
+.session-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.session-label {
+  margin-bottom: 8px;
+  color: #8f8993;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.session-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.session-options button {
+  padding: 8px 11px;
+  color: #aaa4ad;
+  background: #232025;
+  border: 1px solid #3a353d;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.session-options button.active {
+  color: #f4eaf7;
+  background: #583361;
+  border-color: #875493;
+}
+
+
+/* =========================================================
+   QUEST
+   ========================================================= */
+
+.active-quest {
+  padding: 28px;
+}
+
+.quest-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.quest-size {
+  color: #77717b;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.quest-description {
+  color: #9a949d;
+}
+
+.quest-reason {
+  display: inline-flex;
+  gap: 8px;
+  margin: 10px 0 20px;
+  padding: 6px 9px;
+  color: #c8a9ce;
+  background: #241e27;
+  border: 1px solid #413647;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.quest-reason span {
+  color: #786d7b;
+  font-weight: 700;
+}
+
+.quest-objective {
+  margin: 10px 0 20px;
+  padding: 18px;
+  background: #131215;
+  border-left: 3px solid #8e669a;
+  border-radius: 8px;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.quest-rewards {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 18px;
+  color: #aaa4ad;
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   APP MESSAGE + SETTINGS
+   ========================================================= */
+
+.game-message {
+  min-height: 24px;
+  margin: 18px 0 10px;
+  color: #99939f;
+  font-style: italic;
+}
+
+.game-settings {
+  margin-top: 30px;
+  color: #77717b;
+  font-size: 12px;
+}
+
+.game-settings summary {
+  cursor: pointer;
+}
+
+.game-settings .reset {
+  margin-top: 10px;
+}
+
+
+/* =========================================================
+   NAV
+   ========================================================= */
+
+.site-nav {
+  display: flex;
+  gap: 16px;
+  width: min(
+    900px,
+    calc(100% - 32px)
+  );
+  margin: 18px auto 0;
+}
+
+.site-nav a {
+  color: #706a73;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.site-nav a:hover,
+.site-nav a.current {
+  color: #ba91c5;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .session-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quest-objective {
+    font-size: 17px;
+  }
+
+  .quest-rewards {
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 600px) {
   .stats {
     grid-template-columns: 1fr 1fr;

@@ -6,14 +6,19 @@ export default function ZoneSelector({
 }) {
   return (
     <section>
-      <h2>Choose Your Battlefield</h2>
+      <h2>Focus Territory</h2>
+
+      <p className="zone-help">
+        Smart Run lets the quest engine
+        choose from the entire dungeon.
+      </p>
 
       <div className="zone-buttons">
         <button
           className={selectedZone === "random" ? "active" : ""}
           onClick={() => setSelectedZone("random")}
         >
-          🎲 Surprise Me
+          🧠 Smart Run
         </button>
 
         {zones.map((zone) => (

@@ -4,19 +4,10 @@ export default function QuestCard({
   onComplete,
   onFuckThis,
   onReroll,
+  reason,
 }) {
   if (!quest) {
-    return (
-      <section className="quest-card">
-        <div className="quest-label">
-          QUEST LOG
-        </div>
-
-        <h2>
-          No active quest.
-        </h2>
-      </section>
-    );
+    return null;
   }
 
   const variantKey =
@@ -27,53 +18,51 @@ export default function QuestCard({
       : "tiny";
 
   const variant =
-    quest.variants?.[
-      variantKey
-    ];
+    quest.variants[variantKey];
 
-  if (!variant) {
-    return (
-      <section className="quest-card">
-        <h2>
-          Quest data error.
-        </h2>
-
-        <p>
-          This quest does not have a
-          {` ${variantKey} `}
-          variant.
-        </p>
-      </section>
-    );
-  }
+  const difficultyLabel =
+    difficulty === 0
+      ? "FULL QUEST"
+      : difficulty === 1
+      ? "REDUCED QUEST"
+      : "ABSOLUTE MINIMUM";
 
   return (
-    <section className="quest-card">
-      <div className="quest-label">
-        CURRENT QUEST
+    <section className="quest-card active-quest">
+      <div className="quest-topline">
+        <span className="quest-label">
+          CURRENT QUEST
+        </span>
+
+        <span className="quest-size">
+          {difficultyLabel}
+        </span>
       </div>
 
-      <h1>
-        {quest.title}
-      </h1>
+      <h1>{quest.title}</h1>
 
-      {quest.description && (
-        <p className="quest-description">
-          {quest.description}
-        </p>
-      )}
-
-      <p className="quest-task">
-        {variant.task}
+      <p className="quest-description">
+        {quest.description}
       </p>
 
-      <div className="quest-meta">
+      {reason && (
+        <div className="quest-reason">
+          <span>WHY THIS?</span>
+          {reason}
+        </div>
+      )}
+
+      <div className="quest-objective">
+        {variant.task}
+      </div>
+
+      <div className="quest-rewards">
         <span>
           +{variant.xp} XP
         </span>
 
         <span>
-          ⚔️ {variant.damage} damage
+          ⚔ {variant.damage} damage
         </span>
 
         <span>
@@ -85,18 +74,16 @@ export default function QuestCard({
         <button
           className="complete"
           onClick={() =>
-            onComplete(
-              variantKey
-            )
+            onComplete(variantKey)
           }
         >
-          ⚔️ QUEST COMPLETE
+          ⚔ QUEST COMPLETE
         </button>
 
         <button
           onClick={onReroll}
         >
-          🎲 Give Me Something Else
+          ↻ Different Quest
         </button>
 
         <button
