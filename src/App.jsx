@@ -178,124 +178,72 @@ function App() {
     );
   }
 
-  useEffect(() => {
-    function onHash() {
-      setRoute(window.location.hash.replace(/^#/, '') || '/');
-    }
-
-    window.addEventListener('hashchange', onHash);
-
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
   return (
-    <main className="app">
-      <header>
-        <div>
-          <p className="eyebrow">
-            CLEANING RPG
-          </p>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <main className="app">
+            <header>
+              <div>
+                <p className="eyebrow">CLEANING RPG</p>
 
-          <h1>
-            ROOM RAID
-          </h1>
+                <h1>ROOM RAID</h1>
 
-          <p>
-            Your possessions have
-            become hostile.
-          </p>
-        </div>
-      </header>
-
-      <PlayerStats
-        xp={game.xp}
-        completedQuests={
-          game.completedQuests
-        }
-      />
-
-      <ZoneSelector
-        selectedZone={
-          selectedZone
-        }
-        setSelectedZone={
-          changeZone
-        }
-      />
-
-      <BossBar
-        zoneId={selectedZone}
-        bosses={game.bosses}
-      />
-
-      <p className="message">
-        {message}
-      </p>
-
-      {currentQuest ? (
-        <QuestCard
-          quest={
-            currentQuest
-          }
-          difficulty={
-            difficulty
-          }
-          onComplete={
-            handleComplete
-          }
-          onFuckThis={
-            handleFuckThis
-          }
-          onReroll={
-            newQuest
-          }
-        />
-      ) : (
-        <section className="quest-card">
-          <div className="quest-label">
-            QUEST LOG
-          </div>
-
-          <h2>
-            No quests available.
-          </h2>
-
-          <p>
-            This territory may be
-            cleared, or later tasks
-            may still be locked.
-          </p>
-        </section>
-      )}
-
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <RoomStateDebug roomState={game.roomState} />
-
-              <div style={{ margin: 14 }}>
-                <Link to="/dev">Open Developer Tools</Link>
+                <p>Your possessions have become hostile.</p>
               </div>
-            </>
-          }
-        />
+            </header>
 
-        <Route
-          path="/dev"
-          element={<DeveloperPage game={game} applyEffects={applyEffectsToRoom} />}
-        />
-      </Routes>
-      <button
-        className="reset"
-        onClick={
-          handleReset
+            <PlayerStats xp={game.xp} completedQuests={game.completedQuests} />
+
+            <ZoneSelector
+              selectedZone={selectedZone}
+              setSelectedZone={changeZone}
+            />
+
+            <BossBar zoneId={selectedZone} bosses={game.bosses} />
+
+            <p className="message">{message}</p>
+
+            {currentQuest ? (
+              <QuestCard
+                quest={currentQuest}
+                difficulty={difficulty}
+                onComplete={handleComplete}
+                onFuckThis={handleFuckThis}
+                onReroll={newQuest}
+              />
+            ) : (
+              <section className="quest-card">
+                <div className="quest-label">QUEST LOG</div>
+
+                <h2>No quests available.</h2>
+
+                <p>
+                  This territory may be cleared, or later tasks may still be
+                  locked.
+                </p>
+              </section>
+            )}
+
+            <RoomStateDebug roomState={game.roomState} />
+
+            <div style={{ margin: 14 }}>
+              <Link to="/dev">Open Developer Tools</Link>
+            </div>
+
+            <button className="reset" onClick={handleReset}>
+              Reset Game
+            </button>
+          </main>
         }
-      >
-        Reset Game
-      </button>
-    </main>
+      />
+
+      <Route
+        path="/dev"
+        element={<DeveloperPage game={game} applyEffects={applyEffectsToRoom} />}
+      />
+    </Routes>
   );
 }
 
