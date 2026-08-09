@@ -12,6 +12,8 @@ export const defaultRoomState = {
   floorTrash: 50,
   miscellaneousFloorItems: 90,
   floorCleanliness: 20,
+  // How much of the floor is physically blocked by objects
+  floorObstruction: 20,
 
   // Tables / surfaces
   tableTrash: 40,

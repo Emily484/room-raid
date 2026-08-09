@@ -37,7 +37,7 @@ export function calculateFloorClutter(state) {
 
 export function calculateExposedFloor(state) {
   return clamp(
-    100 - calculateFloorClutter(state)
+    100 - (state.floorObstruction ?? 0)
   );
 }
 
@@ -45,21 +45,17 @@ export function calculateFloorReadiness(state) {
   const exposedFloor =
     calculateExposedFloor(state);
 
-  const cleanliness =
-    state.floorCleanliness ?? 0;
+  const floorClutter =
+    calculateFloorClutter(state);
 
-  /*
-    Readiness is primarily about whether
-    the floor is physically accessible.
-
-    Cleanliness matters a little, but an
-    already-dirty exposed floor should still
-    be considered ready to vacuum.
-  */
-
+  // Readiness now emphasizes physical accessibility
+  // (exposedFloor) much more than cleanliness. Cleanliness
+  // influences the decision to vacuum, but it doesn't
+  // prevent the vacuum from operating if the carpet is
+  // already accessible.
   return clamp(
-    exposedFloor * 0.85 +
-      cleanliness * 0.15
+    exposedFloor * 0.75 +
+      (100 - floorClutter) * 0.25
   );
 }
 
