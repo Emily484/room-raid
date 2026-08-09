@@ -7,6 +7,7 @@ import PlayerStats from "./components/PlayerStats";
 import ZoneSelector from "./components/ZoneSelector";
 import BossBar from "./components/BossBar";
 import QuestCard from "./components/QuestCard";
+import RoomStateDebug from "./components/RoomStateDebug";
 
 import {
   getNextQuest,
@@ -251,6 +252,10 @@ function App() {
           </p>
         </section>
       )}
+
+      <RoomStateDebug
+        roomState={game.roomState}
+      />
 
       <button
         className="reset"
