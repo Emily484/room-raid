@@ -9,7 +9,7 @@ import BossBar from "./components/BossBar";
 import QuestCard from "./components/QuestCard";
 import RoomStateDebug from "./components/RoomStateDebug";
 import DeveloperPage from "./components/DeveloperPage";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, NavLink } from "react-router-dom";
 
 import {
   getNextQuest,
@@ -179,7 +179,14 @@ function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <nav className="breadcrumb">
+        <NavLink to="/" className={({isActive}) => isActive ? 'current' : ''}>Home</NavLink>
+        <span className="sep">›</span>
+        <NavLink to="/dev" className={({isActive}) => isActive ? 'current' : ''}>Developer</NavLink>
+      </nav>
+
+      <Routes>
       <Route
         path="/"
         element={
@@ -226,12 +233,6 @@ function App() {
               </section>
             )}
 
-            <RoomStateDebug roomState={game.roomState} />
-
-            <div style={{ margin: 14 }}>
-              <Link to="/dev">Open Developer Tools</Link>
-            </div>
-
             <button className="reset" onClick={handleReset}>
               Reset Game
             </button>
@@ -243,7 +244,8 @@ function App() {
         path="/dev"
         element={<DeveloperPage game={game} applyEffects={applyEffectsToRoom} />}
       />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
