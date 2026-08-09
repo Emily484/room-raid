@@ -47,6 +47,28 @@ function createInitialState() {
   };
 }
 
+const DERIVED_KEYS = [
+  "floorClutter",
+  "exposedFloor",
+  "floorReadiness",
+  "exposedSurface",
+  "bathroomCounterClear",
+];
+
+function sanitizeRoomState(roomState) {
+  if (!roomState) return roomState;
+
+  const copy = { ...roomState };
+
+  for (const k of DERIVED_KEYS) {
+    if (k in copy) {
+      delete copy[k];
+    }
+  }
+
+  return copy;
+}
+
 export function useGameState() {
   const [game, setGame] =
     useState(() => {
@@ -67,11 +89,10 @@ export function useGameState() {
           ...createInitialState(),
           ...parsed,
 
-          roomState: {
-            ...defaultRoomState,
-            ...(parsed.roomState ??
-              {}),
-          },
+            roomState: {
+              ...defaultRoomState,
+              ...(sanitizeRoomState(parsed.roomState) ?? {}),
+            },
 
           bosses: {
             ...makeInitialBosses(),
@@ -98,9 +119,15 @@ export function useGameState() {
     });
 
   useEffect(() => {
+    // Persist a sanitized copy so derived keys are never saved
+    const toSave = {
+      ...game,
+      roomState: sanitizeRoomState(game.roomState),
+    };
+
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify(game)
+      JSON.stringify(toSave)
     );
   }, [game]);
 
