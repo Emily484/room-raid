@@ -5,7 +5,7 @@ function clamp(value, min = 0, max = 100) {
   );
 }
 
-function weightedAverage(items) {
+export function weightedAverage(items) {
   const totalWeight = items.reduce(
     (sum, [, weight]) => sum + weight,
     0

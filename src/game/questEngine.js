@@ -210,7 +210,7 @@ export function getQuestReason(quest) {
   return "Useful progress";
 }
 
-function weightedRandom(
+export function weightedRandom(
   scoredQuests
 ) {
   const totalWeight =
