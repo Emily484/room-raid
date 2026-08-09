@@ -8,7 +8,8 @@ import ZoneSelector from "./components/ZoneSelector";
 import BossBar from "./components/BossBar";
 import QuestCard from "./components/QuestCard";
 import RoomStateDebug from "./components/RoomStateDebug";
-import RoomInspector from "./components/RoomInspector";
+import DeveloperPage from "./components/DeveloperPage";
+import { Routes, Route, Link } from "react-router-dom";
 
 import {
   getNextQuest,
@@ -28,6 +29,8 @@ function App() {
     currentQuest,
     setCurrentQuest,
   ] = useState(null);
+
+  // routing handled by react-router
 
   const [
     difficulty,
@@ -175,6 +178,16 @@ function App() {
     );
   }
 
+  useEffect(() => {
+    function onHash() {
+      setRoute(window.location.hash.replace(/^#/, '') || '/');
+    }
+
+    window.addEventListener('hashchange', onHash);
+
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
   return (
     <main className="app">
       <header>
@@ -255,15 +268,25 @@ function App() {
         </section>
       )}
 
-      <RoomStateDebug
-        roomState={game.roomState}
-      />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <RoomStateDebug roomState={game.roomState} />
 
-      <RoomInspector
-        game={game}
-        applyEffects={applyEffectsToRoom}
-      />
+              <div style={{ margin: 14 }}>
+                <Link to="/dev">Open Developer Tools</Link>
+              </div>
+            </>
+          }
+        />
 
+        <Route
+          path="/dev"
+          element={<DeveloperPage game={game} applyEffects={applyEffectsToRoom} />}
+        />
+      </Routes>
       <button
         className="reset"
         onClick={
