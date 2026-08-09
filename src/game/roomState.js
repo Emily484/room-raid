@@ -13,16 +13,29 @@ export function applyStateEffects(
     ...roomState,
   };
 
-  for (const [key, effect] of Object.entries(effects)) {
+  // Keys that are computed from concrete state and must
+  // never be directly written by quests or other effects.
+  const DERIVED_KEYS = new Set([
+    "floorClutter",
+    "exposedFloor",
+    "floorReadiness",
+    "exposedSurface",
+    "bathroomCounterClear",
+  ]);
+
+  for (
+    const [key, effect]
+    of Object.entries(effects)
+  ) {
+    if (DERIVED_KEYS.has(key)) {
+      console.warn(
+        `Attempted to modify derived state "${key}" via stateEffects. This is ignored.`
+      );
+
+      continue;
+    }
     const currentValue =
       nextState[key] ?? 0;
-
-    // Simple numeric effect:
-    //
-    // floorClutter: -10
-    // exposedFloor: 8
-    //
-    // means ADD that amount.
 
     if (typeof effect === "number") {
       nextState[key] = clamp(
@@ -31,13 +44,6 @@ export function applyStateEffects(
 
       continue;
     }
-
-    // Future-proof format:
-    //
-    // bedMade: {
-    //   operation: "set",
-    //   value: 100
-    // }
 
     if (
       typeof effect === "object" &&
@@ -51,7 +57,8 @@ export function applyStateEffects(
 
       if (effect.operation === "add") {
         nextState[key] = clamp(
-          currentValue + effect.value
+          currentValue +
+            effect.value
         );
       }
     }

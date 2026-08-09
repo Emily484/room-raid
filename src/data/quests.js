@@ -39,8 +39,6 @@ export const quests = [
         stateEffects: {
           clothingOnFloor: -15,
           looseClothing: -10,
-          floorClutter: -8,
-          exposedFloor: 6,
         },
       },
 
@@ -53,8 +51,6 @@ export const quests = [
         stateEffects: {
           clothingOnFloor: -8,
           looseClothing: -5,
-          floorClutter: -4,
-          exposedFloor: 3,
         },
       },
 
@@ -67,8 +63,6 @@ export const quests = [
         stateEffects: {
           clothingOnFloor: -2,
           looseClothing: -1,
-          floorClutter: -1,
-          exposedFloor: 1,
         },
       },
     },
@@ -108,8 +102,6 @@ export const quests = [
         stateEffects: {
           looseClothing: -15,
           clothingOnFloor: -8,
-          floorClutter: -5,
-          exposedFloor: 4,
         },
       },
 
@@ -122,8 +114,6 @@ export const quests = [
         stateEffects: {
           looseClothing: -8,
           clothingOnFloor: -4,
-          floorClutter: -3,
-          exposedFloor: 2,
         },
       },
 
@@ -136,8 +126,6 @@ export const quests = [
         stateEffects: {
           looseClothing: -2,
           clothingOnFloor: -1,
-          floorClutter: -1,
-          exposedFloor: 1,
         },
       },
     },
@@ -177,8 +165,6 @@ export const quests = [
         stateEffects: {
           cleanClothesOut: -18,
           looseClothing: -8,
-          floorClutter: -5,
-          exposedFloor: 3,
         },
       },
 
@@ -191,8 +177,6 @@ export const quests = [
         stateEffects: {
           cleanClothesOut: -9,
           looseClothing: -4,
-          floorClutter: -2,
-          exposedFloor: 2,
         },
       },
 
@@ -247,8 +231,6 @@ export const quests = [
 
         stateEffects: {
           cardboard: -20,
-          floorClutter: -10,
-          exposedFloor: 8,
         },
       },
 
@@ -260,8 +242,6 @@ export const quests = [
 
         stateEffects: {
           cardboard: -8,
-          floorClutter: -4,
-          exposedFloor: 3,
         },
       },
 
@@ -273,8 +253,6 @@ export const quests = [
 
         stateEffects: {
           cardboard: -2,
-          floorClutter: -1,
-          exposedFloor: 1,
         },
       },
     },
@@ -313,8 +291,6 @@ export const quests = [
 
         stateEffects: {
           loosePackaging: -18,
-          floorClutter: -7,
-          exposedFloor: 5,
         },
       },
 
@@ -326,8 +302,6 @@ export const quests = [
 
         stateEffects: {
           loosePackaging: -9,
-          floorClutter: -4,
-          exposedFloor: 3,
         },
       },
 
@@ -339,8 +313,6 @@ export const quests = [
 
         stateEffects: {
           loosePackaging: -2,
-          floorClutter: -1,
-          exposedFloor: 1,
         },
       },
     },
@@ -384,7 +356,6 @@ export const quests = [
         stateEffects: {
           tableTrash: -20,
           surfaceClutter: -8,
-          exposedSurface: 8,
         },
       },
 
@@ -397,7 +368,6 @@ export const quests = [
         stateEffects: {
           tableTrash: -10,
           surfaceClutter: -4,
-          exposedSurface: 4,
         },
       },
 
@@ -410,7 +380,6 @@ export const quests = [
         stateEffects: {
           tableTrash: -2,
           surfaceClutter: -1,
-          exposedSurface: 1,
         },
       },
     },
@@ -449,7 +418,6 @@ export const quests = [
 
         stateEffects: {
           surfaceClutter: -15,
-          exposedSurface: 15,
         },
       },
 
@@ -461,7 +429,6 @@ export const quests = [
 
         stateEffects: {
           surfaceClutter: -8,
-          exposedSurface: 8,
         },
       },
 
@@ -473,7 +440,6 @@ export const quests = [
 
         stateEffects: {
           surfaceClutter: -2,
-          exposedSurface: 2,
         },
       },
     },
@@ -586,8 +552,6 @@ export const quests = [
 
         stateEffects: {
           floorTrash: -20,
-          floorClutter: -8,
-          exposedFloor: 7,
         },
       },
 
@@ -599,8 +563,6 @@ export const quests = [
 
         stateEffects: {
           floorTrash: -10,
-          floorClutter: -4,
-          exposedFloor: 4,
         },
       },
 
@@ -612,8 +574,6 @@ export const quests = [
 
         stateEffects: {
           floorTrash: -2,
-          floorClutter: -1,
-          exposedFloor: 1,
         },
       },
     },
@@ -652,8 +612,6 @@ export const quests = [
 
         stateEffects: {
           miscellaneousFloorItems: -18,
-          floorClutter: -12,
-          exposedFloor: 10,
         },
       },
 
@@ -665,8 +623,6 @@ export const quests = [
 
         stateEffects: {
           miscellaneousFloorItems: -9,
-          floorClutter: -6,
-          exposedFloor: 5,
         },
       },
 
@@ -678,8 +634,6 @@ export const quests = [
 
         stateEffects: {
           miscellaneousFloorItems: -2,
-          floorClutter: -1,
-          exposedFloor: 1,
         },
       },
     },
@@ -1045,7 +999,6 @@ export const quests = [
 
         stateEffects: {
           bathroomCounterClutter: -20,
-          bathroomCounterClear: 18,
         },
       },
 
@@ -1057,7 +1010,6 @@ export const quests = [
 
         stateEffects: {
           bathroomCounterClutter: -10,
-          bathroomCounterClear: 9,
         },
       },
 
@@ -1069,7 +1021,6 @@ export const quests = [
 
         stateEffects: {
           bathroomCounterClutter: -2,
-          bathroomCounterClear: 2,
         },
       },
     },
