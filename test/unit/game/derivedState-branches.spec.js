@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { weightedAverage, calculateFloorClutter } from '../../../src/game/derivedState.js';
+import { mkRoom } from '../../test-utils.js';
 
 describe('derivedState branch coverage', () => {
   it('weightedAverage returns 0 when total weight is zero', () => {
@@ -17,8 +18,8 @@ describe('derivedState branch coverage', () => {
     const c = calculateFloorClutter(s);
     expect(c).toBe(0);
 
-    const s2 = { clothingOnFloor: 200, cardboard: 200, floorTrash: 200, miscellaneousFloorItems: 200 };
-    const c2 = calculateFloorClutter(s2);
+  const s2 = mkRoom({ clothingOnFloor: 200, cardboard: 200, floorTrash: 200, miscellaneousFloorItems: 200 });
+  const c2 = calculateFloorClutter(s2);
     expect(c2).toBeLessThanOrEqual(100);
   });
 });

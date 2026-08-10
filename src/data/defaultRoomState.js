@@ -1,30 +1,32 @@
+import { makeFieldFromValue } from '../game/roomFields.js';
+
 export const defaultRoomState = {
-  clothingOnFloor: 30,
-  looseClothing: 18,
-  cleanClothesOut: 50,
+  clothingOnFloor: makeFieldFromValue(30),
+  looseClothing: makeFieldFromValue(18),
+  cleanClothesOut: makeFieldFromValue(50),
 
-  cardboard: 30,
-  loosePackaging: 45,
+  cardboard: makeFieldFromValue(30),
+  loosePackaging: makeFieldFromValue(45),
 
-  floorTrash: 8,
-  miscellaneousFloorItems: 50,
-  floorObstruction: 20,
-  floorCleanliness: 80,
+  floorTrash: makeFieldFromValue(8),
+  miscellaneousFloorItems: makeFieldFromValue(50),
+  floorObstruction: makeFieldFromValue(20),
+  floorCleanliness: makeFieldFromValue(80),
 
-  tableTrash: 30,
-  surfaceClutter: 70,
-  surfaceCleanliness: 25,
+  tableTrash: makeFieldFromValue(30),
+  surfaceClutter: makeFieldFromValue(70),
+  surfaceCleanliness: makeFieldFromValue(25),
 
-  bedClutter: 30,
-  bedMade: 0,
+  bedClutter: makeFieldFromValue(30),
+  bedMade: makeFieldFromValue(0),
 
-  loungeClutter: 50,
-  shelfDisorganization: 40,
+  loungeClutter: makeFieldFromValue(50),
+  shelfDisorganization: makeFieldFromValue(40),
 
-  bathroomCounterClutter: 15,
-  sinkCleanliness: 95,
+  bathroomCounterClutter: makeFieldFromValue(15),
+  sinkCleanliness: makeFieldFromValue(95),
 
-  mirrorDirty: 45,
-  tubClutter: 25,
-  tubCleanliness: 50,
+  mirrorDirty: makeFieldFromValue(45),
+  tubClutter: makeFieldFromValue(25),
+  tubCleanliness: makeFieldFromValue(50),
 };

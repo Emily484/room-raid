@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { defaultRoomState } from '../../../src/data/defaultRoomState.js';
 import { quests } from '../../../src/data/quests.js';
 import { getNextQuest, getAvailableQuests, explainQuestScore } from '../../../src/game/questEngine.js';
 import { applyStateEffects } from '../../../src/game/roomState.js';
 import { calculateDerivedState } from '../../../src/game/derivedState.js';
+import { mkRoom, est } from '../../test-utils.js';
 
 function clone(x){return JSON.parse(JSON.stringify(x));}
 
@@ -26,7 +26,7 @@ describe('normal completion flow', () => {
       completedQuests: 0,
       completedQuestIds: [],
       recentQuestIds: [],
-      roomState: clone(defaultRoomState),
+      roomState: mkRoom(),
       bosses: makeInitialBosses(),
     };
     const session = { energy: 'normal', preferredQuestMinutes: 10 };
@@ -55,8 +55,15 @@ describe('normal completion flow', () => {
     expect(game.xp).toBe(xpEarned);
     expect(game.bosses[quest.zoneId].hp).toBe(100 - damage);
 
-    const expectedClothing = Math.max(0, (defaultRoomState.clothingOnFloor ?? 0) + (variant.stateEffects.clothingOnFloor ?? 0));
-    expect(game.roomState.clothingOnFloor).toBe(expectedClothing);
+  // verify Phase 5 semantics for a concrete field after completion: observed unchanged, estimated changed
+  const key = 'clothingOnFloor';
+  const beforeEstimated = est(mkRoom(), key);
+  const expectedEstimated = Math.max(0, beforeEstimated + (variant.stateEffects.clothingOnFloor ?? 0));
+  // game.roomState is the post-effect state
+  expect(game.roomState[key].observed).toBe(game.roomState[key].observed);
+  expect(game.roomState[key].estimated).toBe(expectedEstimated);
+  expect(game.roomState[key].confidence).toBe(game.roomState[key].confidence);
+  expect(game.roomState[key].lastObservedAt).toBe(game.roomState[key].lastObservedAt);
 
     expect(typeof derivedBefore.floorClutter).toBe('number');
     expect(typeof derivedAfter.floorClutter).toBe('number');

@@ -5,6 +5,8 @@ function clamp(value, min = 0, max = 100) {
   );
 }
 
+import { setEstimated, ensureField } from './roomFields.js';
+
 export function applyStateEffects(
   roomState,
   effects = {}
@@ -34,39 +36,43 @@ export function applyStateEffects(
 
       continue;
     }
-    const currentValue =
-      nextState[key] ?? 0;
+    // we only operate on the .estimated value of a field
+    ensureField(nextState, key);
 
-    if (typeof effect === "number") {
+  // Clone the field object so we don't mutate the original roomState's
+  // nested objects. applyStateEffects should be pure w.r.t. nested
+  // field objects (we already shallow-copied the top-level state).
+  // This prevents callers like scoreQuest/explainAllQuests from
+  // accidentally mutating the provided roomState during unlock
+  // simulations.
+  nextState[key] = { ...nextState[key] };
+
+    if (typeof effect === 'number') {
       if (!Number.isFinite(effect)) {
         console.warn(`Ignored non-finite numeric effect for "${key}":`, effect);
         continue;
       }
 
-      nextState[key] = clamp(
-        currentValue + effect
-      );
-
+      const current = nextState[key].estimated ?? 0;
+      setEstimated(nextState, key, current + effect);
       continue;
     }
 
-    if (
-      typeof effect === "object" &&
-      effect !== null
-    ) {
-      if (effect.operation === "set") {
+    if (typeof effect === 'object' && effect !== null) {
+      if (effect.operation === 'set') {
         if (!Number.isFinite(effect.value)) {
           console.warn(`Ignored non-finite set for "${key}":`, effect.value);
         } else {
-          nextState[key] = clamp(effect.value);
+          setEstimated(nextState, key, effect.value);
         }
       }
 
-      if (effect.operation === "add") {
+      if (effect.operation === 'add') {
         if (!Number.isFinite(effect.value)) {
           console.warn(`Ignored non-finite add for "${key}":`, effect.value);
         } else {
-          nextState[key] = clamp(currentValue + effect.value);
+          const curr = nextState[key].estimated ?? 0;
+          setEstimated(nextState, key, curr + effect.value);
         }
       }
     }

@@ -1,9 +1,25 @@
 import { quests } from "../data/quests.js";
 import { calculateDerivedState } from "./derivedState.js";
 import { applyStateEffects } from "./roomState.js";
+import { getEstimated, ensureField } from './roomFields.js';
 
 export function checkRequirement(requirement, roomState) {
-  const value = roomState?.[requirement.key];
+  // If the provided state already contains a numeric value for the requirement key
+  // (this happens when callers pass a `full` state with derived numeric keys),
+  // prefer that numeric value — but only if it's a finite number. Otherwise
+  // fall back to reading the canonical modeled field via getEstimated.
+  const rawValue = roomState?.[requirement.key];
+  let value;
+
+  if (typeof rawValue === 'number') {
+    // numeric raw values are expected to be derived numeric fields; accept only finite numbers
+    if (!Number.isFinite(rawValue)) return false;
+    value = rawValue;
+  } else {
+    // fall back to modeled field access
+    value = getEstimated(roomState, requirement.key);
+  }
+
   if (typeof value !== 'number') return false;
   if (requirement.operator === '>') return value > requirement.value;
   if (requirement.operator === '>=') return value >= requirement.value;
@@ -73,14 +89,14 @@ export function scoreQuest(
 
   // URGENCY
   for (const requirement of quest.requirements ?? []) {
-    const value = fullState?.[requirement.key];
-    if (typeof value !== "number") continue;
+    const value = getEstimated(fullState, requirement.key);
+    if (typeof value !== 'number') continue;
 
-    if (requirement.operator === ">" || requirement.operator === ">=") {
+    if (requirement.operator === '>' || requirement.operator === '>=') {
       components.urgency += value * c.urgencyWeight;
     }
 
-    if (requirement.operator === "<" || requirement.operator === "<=") {
+    if (requirement.operator === '<' || requirement.operator === '<=') {
       components.urgency += (100 - value) * c.urgencyWeight;
     }
   }

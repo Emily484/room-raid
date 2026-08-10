@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { defaultRoomState } from '../../../src/data/defaultRoomState.js';
+import { mkRoom } from '../../test-utils.js';
 import { calculateDerivedState } from '../../../src/game/derivedState.js';
 import { applyStateEffects } from '../../../src/game/roomState.js';
 import { getAvailableQuests } from '../../../src/game/questEngine.js';
@@ -9,7 +10,7 @@ function clone(x){return JSON.parse(JSON.stringify(x));}
 
 describe('inspector eligibility', () => {
   it('corrections affect quest eligibility end-to-end', () => {
-    const room = clone(defaultRoomState);
+  const room = mkRoom();
     const target = quests.find(q => q.id === 'bathroom-tub-clean');
     expect(target).toBeTruthy();
 

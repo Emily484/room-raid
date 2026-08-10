@@ -1,3 +1,5 @@
+import { getEstimated } from './roomFields.js';
+
 function clamp(value, min = 0, max = 100) {
   return Math.max(
     min,
@@ -27,17 +29,17 @@ export function weightedAverage(items) {
 export function calculateFloorClutter(state) {
   return clamp(
     weightedAverage([
-      [state.clothingOnFloor ?? 0, 0.30],
-      [state.cardboard ?? 0, 0.25],
-      [state.floorTrash ?? 0, 0.15],
-      [state.miscellaneousFloorItems ?? 0, 0.30],
+      [getEstimated(state, 'clothingOnFloor'), 0.30],
+      [getEstimated(state, 'cardboard'), 0.25],
+      [getEstimated(state, 'floorTrash'), 0.15],
+      [getEstimated(state, 'miscellaneousFloorItems'), 0.30],
     ])
   );
 }
 
 export function calculateExposedFloor(state) {
   return clamp(
-    100 - (state.floorObstruction ?? 0)
+    100 - getEstimated(state, 'floorObstruction')
   );
 }
 
@@ -61,14 +63,13 @@ export function calculateFloorReadiness(state) {
 
 export function calculateSurfaceExposure(state) {
   return clamp(
-    100 - (state.surfaceClutter ?? 0)
+    100 - getEstimated(state, 'surfaceClutter')
   );
 }
 
 export function calculateBathroomCounterExposure(state) {
   return clamp(
-    100 -
-      (state.bathroomCounterClutter ?? 0)
+    100 - getEstimated(state, 'bathroomCounterClutter')
   );
 }
 

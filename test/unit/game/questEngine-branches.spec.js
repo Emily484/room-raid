@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { weightedRandom, scoreQuest, getNextQuest } from '../../../src/game/questEngine.js';
 import { quests } from '../../../src/data/quests.js';
+import { mkRoom } from '../../test-utils.js';
 
 describe('questEngine branch tests', () => {
   it('weightedRandom returns last quest when total weight is zero', () => {
@@ -14,7 +15,7 @@ describe('questEngine branch tests', () => {
 
   it('scoreQuest computes repetition penalty floor correctly', () => {
     const q = { id: 'rep-test', priority: 50, variants: { normal: { estimatedMinutes: 5 } }, category: 'misc', requirements: [] };
-    const room = {};
+  const room = mkRoom();
     const res0 = scoreQuest(q, room, ['rep-test']);
     expect(res0).toBeGreaterThanOrEqual(1);
 
@@ -31,8 +32,8 @@ describe('questEngine branch tests', () => {
       return;
     }
 
-    const room = {};
-    const first = getNextQuest(smallZone, room, [], [], null);
+  const room = mkRoom();
+  const first = getNextQuest(smallZone, room, [], [], null);
     if (!first) {
       expect(true).toBe(true);
       return;
