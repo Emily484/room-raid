@@ -1,0 +1,29 @@
+.scan-reference {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #0f0b17;
+  border-radius: 6px;
+}
+.scan-reference-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.scan-reference-summary div { font-size: 0.9rem; }
+.scan-reference-grid { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.scan-reference-slot { width: 120px; background: #0b0710; padding: 0.5rem; border-radius: 6px; }
+.scan-reference-thumbnails { display: flex; gap: 4px; margin-top: 6px; }
+.scan-reference-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 3px; }
+.scan-reference-empty { padding: 0.5rem; }
+.scan-reference-actions { margin-top: 8px; }
+
+@media (min-width: 800px) {
+  .room-inspector { display: grid; grid-template-columns: 240px 1fr 320px; gap: 1rem; }
+  .room-inspector .room-inspector-panel { grid-column: 2 / 3; }
+  .scan-reference { grid-column: 1 / 2; }
+  .derived-state-panel { grid-column: 3 / 4; }
+}
+
+@media (max-width: 799px) {
+  .room-inspector { display: block; }
+}

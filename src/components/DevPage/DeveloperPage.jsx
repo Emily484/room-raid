@@ -1,5 +1,7 @@
 import RoomStateDebug from "./RoomStateDebug.jsx";
 import RoomInspector from "./RoomInspector.jsx";
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { explainAllQuests } from "../../game/questEngine.js";
 import { calculateDerivedState } from "../../game/derivedState.js";
 import "./DeveloperPage.css";
@@ -65,7 +67,19 @@ export default function DeveloperPage({
   game,
   applyEffects,
   observeField,
+  scanState,
 }) {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location?.hash === '#room-inspector') {
+      // try to scroll the target into view
+      const el = document.getElementById('room-inspector');
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [location]);
   const session = {
     energy: "normal",
     preferredQuestMinutes: 10,
@@ -312,6 +326,7 @@ export default function DeveloperPage({
           game={game}
           applyEffects={applyEffects}
           observeField={observeField}
+          scanState={scanState}
         />
       </section>
 

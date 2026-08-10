@@ -1,0 +1,544 @@
+/* ========================================
+   SCAN TERRITORY
+   ======================================== */
+
+.scan-page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 72px 0 100px;
+}
+
+/* ---------- Hero ---------- */
+
+.scan-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+
+  padding-bottom: 32px;
+  margin-bottom: 24px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.scan-hero h1 {
+  margin: 6px 0 8px;
+
+  font-size: clamp(3rem, 7vw, 5.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+.scan-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.scan-status {
+  min-width: 210px;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  padding: 18px 20px;
+
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.scan-status-number {
+  font-size: 2.5rem;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.scan-status > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scan-status span,
+.scan-timestamps span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.scan-status strong {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+
+/* ---------- Intro ---------- */
+
+.scan-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+
+  margin-bottom: 54px;
+  padding: 18px 20px;
+
+  color: var(--muted);
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(176, 110, 190, 0.08),
+      transparent
+    );
+
+  border-left: 2px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+}
+
+.scan-intro-icon {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.scan-intro strong {
+  color: var(--text);
+}
+
+.scan-intro p {
+  max-width: 760px;
+  margin: 5px 0 0;
+  line-height: 1.6;
+}
+
+
+/* ---------- Section ---------- */
+
+.scan-section-heading {
+  margin-bottom: 22px;
+}
+
+.scan-section-heading h2 {
+  margin: 4px 0 0;
+  font-size: 1.8rem;
+}
+
+.scan-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+
+/* ---------- Slot cards ---------- */
+
+.scan-slot {
+  min-width: 0;
+  padding: 24px;
+
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.scan-slot:hover {
+  border-color: rgba(190, 130, 205, 0.4);
+}
+
+.scan-slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.scan-slot-eyebrow {
+  margin: 0 0 5px;
+
+  color: var(--accent);
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.scan-slot h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.scan-slot-description {
+  min-height: 44px;
+  margin: 10px 0 18px;
+
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.scan-count {
+  flex: 0 0 auto;
+
+  padding: 6px 9px;
+
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.035);
+
+  border: 1px solid var(--border);
+  border-radius: 999px;
+
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.scan-count-full {
+  color: var(--accent);
+  border-color: rgba(190, 130, 205, 0.45);
+}
+
+
+/* ---------- Upload zone ---------- */
+
+.scan-upload-zone {
+  width: 100%;
+  min-height: 150px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  color: var(--muted);
+  background:
+    rgba(255, 255, 255, 0.018);
+
+  border: 1px dashed
+    rgba(190, 130, 205, 0.4);
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.scan-upload-zone:hover {
+  color: var(--text);
+
+  background:
+    rgba(190, 130, 205, 0.055);
+
+  border-color: var(--accent);
+}
+
+.scan-upload-icon {
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  margin-bottom: 10px;
+
+  color: var(--accent);
+  background:
+    rgba(190, 130, 205, 0.1);
+
+  border: 1px solid
+    rgba(190, 130, 205, 0.3);
+  border-radius: 50%;
+
+  font-size: 1.5rem;
+  font-weight: 300;
+}
+
+.scan-upload-title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.scan-upload-hint {
+  margin-top: 5px;
+
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+
+/* ---------- Errors ---------- */
+
+.slot-error {
+  display: flex;
+  gap: 8px;
+
+  margin-top: 12px;
+  padding: 10px 12px;
+
+  color: #df9aa2;
+  background: rgba(130, 40, 50, 0.1);
+
+  border: 1px solid rgba(190, 80, 90, 0.25);
+  border-radius: 8px;
+
+  font-size: 0.8rem;
+}
+
+
+/* ---------- Image previews ---------- */
+
+.slot-previews {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 10px;
+
+  margin-top: 14px;
+}
+
+.preview-card {
+  min-width: 0;
+}
+
+.preview-image-wrap {
+  position: relative;
+
+  overflow: hidden;
+
+  aspect-ratio: 4 / 3;
+
+  background: #0c0b0d;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.preview-image-wrap img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+  object-fit: cover;
+}
+
+.preview-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+
+  width: 26px;
+  height: 26px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  color: white;
+  background: rgba(10, 8, 11, 0.82);
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+
+  cursor: pointer;
+}
+
+.preview-remove:hover {
+  background: #702f3b;
+}
+
+.preview-meta {
+  padding: 7px 2px 0;
+}
+
+.meta-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.meta-size {
+  margin-top: 2px;
+
+  color: var(--muted);
+  font-size: 0.67rem;
+}
+
+
+/* ---------- Footer ---------- */
+
+.scan-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 30px;
+
+  margin-top: 34px;
+  padding-top: 24px;
+
+  border-top: 1px solid var(--border);
+}
+
+.scan-timestamps {
+  display: flex;
+  gap: 30px;
+}
+
+.scan-timestamps > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.scan-timestamps strong {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.scan-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scan-clear,
+.scan-continue {
+  min-height: 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  padding: 0 16px;
+
+  border-radius: 8px;
+
+  font-size: 0.82rem;
+  font-weight: 700;
+
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.scan-clear {
+  color: var(--muted);
+  background: transparent;
+
+  border: 1px solid var(--border);
+}
+
+.scan-clear:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.scan-continue {
+  color: white;
+  background: var(--accent);
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.08);
+}
+
+.scan-continue:hover {
+  filter: brightness(1.08);
+}
+
+.scan-continue span {
+  font-size: 1.1rem;
+}
+
+.scan-temporary-note {
+  margin: 18px 0 0;
+
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-align: right;
+  opacity: 0.7;
+}
+
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 800px) {
+  .scan-page {
+    width: min(100% - 28px, 650px);
+    padding-top: 42px;
+  }
+
+  .scan-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scan-status {
+    min-width: 0;
+  }
+
+  .scan-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scan-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scan-timestamps {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .scan-footer-actions {
+    width: 100%;
+  }
+
+  .scan-clear,
+  .scan-continue {
+    flex: 1;
+  }
+
+  .scan-temporary-note {
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .scan-page {
+    width: calc(100% - 20px);
+  }
+
+  .scan-slot {
+    padding: 18px;
+  }
+
+  .slot-previews {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .scan-footer-actions {
+    flex-direction: column;
+  }
+
+  .scan-clear,
+  .scan-continue {
+    width: 100%;
+  }
+}

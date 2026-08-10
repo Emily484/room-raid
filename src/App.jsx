@@ -16,6 +16,8 @@ import QuestCard from "./components/QuestCard";
 import SessionControls from "./components/SessionControls";
 
 import DeveloperPage from "./components/DevPage/DeveloperPage";
+import ScanPage from "./components/ScanPage/ScanPage";
+import { useScanState } from "./hooks/useScanState";
 
 import {
   getNextQuest,
@@ -86,6 +88,9 @@ function App() {
     applyEffectsToRoom,
     observeFieldInRoom,
   } = useGameState();
+
+  // Shared scan state for /scan and the Room Inspector (Developer page).
+  const scanState = useScanState();
 
   useEffect(() => {
     const quest =
@@ -210,6 +215,17 @@ function App() {
           }
         >
           Room Raid
+        </NavLink>
+
+        <NavLink
+          to="/scan"
+          className={({ isActive }) =>
+            isActive
+              ? "current"
+              : ""
+          }
+        >
+          Scan Room
         </NavLink>
 
         <NavLink
@@ -350,8 +366,13 @@ function App() {
               applyEffects={
                 applyEffectsToRoom
               }
+              scanState={scanState}
             />
           }
+        />
+        <Route
+          path="/scan"
+          element={<ScanPage scanState={scanState} />}
         />
       </Routes>
     </>

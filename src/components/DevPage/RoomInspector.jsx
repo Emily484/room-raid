@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { Link } from 'react-router-dom';
 import { calculateDerivedState } from "../../game/derivedState";
 import { calculateRoomConfidence } from "../../game/roomFields";
+import { SCAN_SLOTS } from '../../data/scanSlots';
+import './RoomInspector.css';
 
 const correctionFactors = {
   muchLess: 0.5,
@@ -13,6 +16,7 @@ export default function RoomInspector({
   game,
   applyEffects,
   observeField,
+  scanState,
 }) {
   const derived = calculateDerivedState(
     game.roomState
@@ -24,6 +28,9 @@ export default function RoomInspector({
 
   const [directValues, setDirectValues] =
     useState({});
+
+  const scan = scanState?.scan;
+  const totalScanImages = scanState?.totalImages ?? 0;
 
   const fields = [
     {
@@ -126,6 +133,42 @@ export default function RoomInspector({
 
   return (
     <div className="room-inspector">
+      <div id="room-inspector" />
+      <aside className="scan-reference">
+        <div className="scan-reference-header">
+          <h4>CURRENT SCAN</h4>
+          <div className="scan-reference-summary">
+            <div>{totalScanImages} photos</div>
+            <div>Updated {scan ? new Date(scan.updatedAt).toLocaleTimeString() : '-'}</div>
+            <div>{scan?.status ?? 'Draft'}</div>
+          </div>
+        </div>
+
+        <div className="scan-reference-grid">
+          {scan && Object.entries(scan.slots).filter(([,items]) => (items?.length ?? 0) > 0).map(([slotId, items]) => (
+            <div key={slotId} className="scan-reference-slot">
+              <div className="slot-label">{(SCAN_SLOTS.find(s => s.id === slotId)?.label) ?? slotId}</div>
+              <div className="scan-reference-thumbnails">
+                {items.map((it) => (
+                  <img key={it.id} src={it.previewUrl} alt={`${slotId} preview`} className="scan-reference-thumb" />
+                ))}
+              </div>
+              <div className="slot-count">{items.length} photos</div>
+            </div>
+          ))}
+
+          {(!scan || totalScanImages === 0) && (
+            <div className="scan-reference-empty">
+              <div>No scan photos attached.</div>
+              <Link to="/scan">Add photos</Link>
+            </div>
+          )}
+        </div>
+
+        <div className="scan-reference-actions">
+          <Link to="/scan">Edit Scan</Link>
+        </div>
+      </aside>
       <div className="room-inspector-panel">
         <h3>Room Model</h3>
 
