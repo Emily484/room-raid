@@ -12,6 +12,7 @@ import {
 import {
   applyStateEffects,
 } from "../game/roomState";
+import { observeField as observeFieldHelper } from '../game/roomFields.js';
 
 const STORAGE_KEY =
   "roomRaidGame";
@@ -286,10 +287,21 @@ export function useGameState() {
     });
   }
 
+  function observeFieldInRoom(key, value, observedAt) {
+    setGame((current) => {
+      const nextRoomState = observeFieldHelper(current.roomState, key, value, observedAt);
+      return {
+        ...current,
+        roomState: nextRoomState,
+      };
+    });
+  }
+
   return {
     game,
     completeQuest,
     resetGame,
     applyEffectsToRoom,
+    observeFieldInRoom,
   };
 }

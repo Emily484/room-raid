@@ -20,7 +20,6 @@ import DeveloperPage from "./components/DevPage/DeveloperPage";
 import {
   getNextQuest,
 } from "./game/questEngine";
-
 import {
   useGameState,
 } from "./hooks/useGameState";
@@ -85,6 +84,7 @@ function App() {
     completeQuest,
     resetGame,
     applyEffectsToRoom,
+    observeFieldInRoom,
   } = useGameState();
 
   useEffect(() => {
@@ -285,6 +285,7 @@ function App() {
 
               {currentQuest ? (
                 <QuestCard
+              observeField={observeFieldInRoom}
                   quest={
                     currentQuest
                   }
