@@ -35,10 +35,10 @@ describe('applyStateEffects', () => {
     const before = mkRoom({ [key]: { observed: 80, estimated: 80, confidence: 1, lastObservedAt: '2026-08-09T18:00:00.000Z' } });
     const after = applyStateEffects(before, { [key]: { operation: 'add', value: -10 } });
 
-    // Phase 5 semantics: estimated changed, other fields unchanged
+    // Phase 5 semantics: estimated changed, confidence decays only for inferred updates
     expect(after[key].observed).toBe(80);
     expect(after[key].estimated).toBe(70);
-    expect(after[key].confidence).toBe(1);
+    expect(after[key].confidence).toBeCloseTo(1 - 0.04, 6);
     expect(after[key].lastObservedAt).toBe('2026-08-09T18:00:00.000Z');
   });
 });

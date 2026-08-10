@@ -64,6 +64,7 @@ function ScoreComponent({
 export default function DeveloperPage({
   game,
   applyEffects,
+  observeField,
 }) {
   const session = {
     energy: "normal",
@@ -310,6 +311,7 @@ export default function DeveloperPage({
         <RoomInspector
           game={game}
           applyEffects={applyEffects}
+          observeField={observeField}
         />
       </section>
 

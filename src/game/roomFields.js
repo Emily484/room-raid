@@ -49,6 +49,35 @@ export function setEstimated(nextState, key, value) {
   nextState[key].estimated = Math.max(0, num);
 }
 
+// How much confidence to reduce for each inferred (non-manual) update.
+// Exported so it can be tuned centrally and tested.
+export const CONFIDENCE_DECAY_PER_INFERENCE = 0.04;
+
+// Calculate the aggregate room confidence as a simple arithmetic mean
+// of the canonical modeled fields' confidence values. Ignore derived
+// fields. Clamp to 0..1. If no valid modeled fields are present,
+// return 1 (optimistic default).
+export function calculateRoomConfidence(roomState) {
+  if (!roomState || typeof roomState !== 'object') return 1;
+
+  const confidences = [];
+
+  for (const key of FIELD_KEYS) {
+    const f = roomState[key];
+    if (!f || typeof f !== 'object') continue;
+    const c = f.confidence;
+    if (typeof c !== 'number' || !Number.isFinite(c)) continue;
+    // clamp per-field confidence as defensive measure
+    confidences.push(Math.max(0, Math.min(1, c)));
+  }
+
+  if (confidences.length === 0) return 1;
+
+  const sum = confidences.reduce((s, v) => s + v, 0);
+  const avg = sum / confidences.length;
+  return Math.max(0, Math.min(1, avg));
+}
+
 // Observation helper: used by the Room Inspector when a user directly
 // observes a field value (manual correction). This is a distinct write
 // pathway from inference (`applyStateEffects`). It does not mutate the

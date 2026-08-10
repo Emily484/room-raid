@@ -5,7 +5,7 @@ function clamp(value, min = 0, max = 100) {
   );
 }
 
-import { setEstimated, ensureField } from './roomFields.js';
+import { setEstimated, ensureField, CONFIDENCE_DECAY_PER_INFERENCE } from './roomFields.js';
 
 export function applyStateEffects(
   roomState,
@@ -53,8 +53,18 @@ export function applyStateEffects(
         continue;
       }
 
-      const current = nextState[key].estimated ?? 0;
-      setEstimated(nextState, key, current + effect);
+      const existedBefore = typeof roomState[key] === 'object' && typeof roomState[key].estimated === 'number';
+      const prevEstimated = nextState[key].estimated ?? 0;
+      setEstimated(nextState, key, prevEstimated + effect);
+      const newEstimated = nextState[key].estimated ?? 0;
+
+      // Only decay confidence when an actual change was applied and the
+      // field existed in the input state (unknown keys should not be decayed).
+      if (existedBefore && newEstimated !== prevEstimated) {
+        const prevConfidence = typeof nextState[key].confidence === 'number' ? nextState[key].confidence : 0;
+        nextState[key].confidence = Math.max(0, prevConfidence - CONFIDENCE_DECAY_PER_INFERENCE);
+      }
+
       continue;
     }
 
@@ -63,7 +73,15 @@ export function applyStateEffects(
         if (!Number.isFinite(effect.value)) {
           console.warn(`Ignored non-finite set for "${key}":`, effect.value);
         } else {
+          const existedBefore = typeof roomState[key] === 'object' && typeof roomState[key].estimated === 'number';
+          const prevEstimated = nextState[key].estimated ?? 0;
           setEstimated(nextState, key, effect.value);
+          const newEstimated = nextState[key].estimated ?? 0;
+
+          if (existedBefore && newEstimated !== prevEstimated) {
+            const prevConfidence = typeof nextState[key].confidence === 'number' ? nextState[key].confidence : 0;
+            nextState[key].confidence = Math.max(0, prevConfidence - CONFIDENCE_DECAY_PER_INFERENCE);
+          }
         }
       }
 
@@ -71,8 +89,15 @@ export function applyStateEffects(
         if (!Number.isFinite(effect.value)) {
           console.warn(`Ignored non-finite add for "${key}":`, effect.value);
         } else {
+          const existedBefore = typeof roomState[key] === 'object' && typeof roomState[key].estimated === 'number';
           const curr = nextState[key].estimated ?? 0;
           setEstimated(nextState, key, curr + effect.value);
+          const newEstimated = nextState[key].estimated ?? 0;
+
+          if (existedBefore && newEstimated !== curr) {
+            const prevConfidence = typeof nextState[key].confidence === 'number' ? nextState[key].confidence : 0;
+            nextState[key].confidence = Math.max(0, prevConfidence - CONFIDENCE_DECAY_PER_INFERENCE);
+          }
         }
       }
     }

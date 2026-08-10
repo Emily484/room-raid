@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { calculateDerivedState } from "../../game/derivedState";
+import { calculateRoomConfidence } from "../../game/roomFields";
 
 const correctionFactors = {
   muchLess: 0.5,
@@ -11,10 +12,15 @@ const correctionFactors = {
 export default function RoomInspector({
   game,
   applyEffects,
+  observeField,
 }) {
   const derived = calculateDerivedState(
     game.roomState
   );
+
+  const roomConfidence = calculateRoomConfidence(game.roomState);
+  const roomConfidencePercent = Math.round(roomConfidence * 100);
+  const TRUSTED_THRESHOLD = 0.75;
 
   const [directValues, setDirectValues] =
     useState({});
@@ -43,7 +49,7 @@ export default function RoomInspector({
     type
   ) {
     const current =
-      game.roomState[key] ?? 0;
+      (game.roomState[key]?.estimated ?? 0);
 
     if (type === "looksRight") {
       return;
@@ -55,12 +61,16 @@ export default function RoomInspector({
     const target =
       Math.round(current * factor);
 
-    const delta =
-      target - current;
-
-    applyEffects({
-      [key]: delta,
-    });
+    // Manual inspector corrections should be treated as observations.
+    // Use the centralized observeField helper via the observeField prop
+    // to set observed/estimated/confidence/lastObservedAt.
+    if (typeof observeField === 'function') {
+      observeField(key, target);
+    } else {
+      // fallback to inference if observeField not provided (shouldn't happen)
+      const delta = target - current;
+      applyEffects({ [key]: delta });
+    }
   }
 
   function handleDirectChange(
@@ -100,15 +110,13 @@ export default function RoomInspector({
         )
       );
 
-    const current =
-      game.roomState[key] ?? 0;
-
-    const delta =
-      target - current;
-
-    applyEffects({
-      [key]: delta,
-    });
+    if (typeof observeField === 'function') {
+      observeField(key, target);
+    } else {
+      const current = (game.roomState[key]?.estimated ?? 0);
+      const delta = target - current;
+      applyEffects({ [key]: delta });
+    }
 
     setDirectValues((current) => ({
       ...current,
@@ -120,6 +128,48 @@ export default function RoomInspector({
     <div className="room-inspector">
       <div className="room-inspector-panel">
         <h3>Room Model</h3>
+
+        <div className="room-confidence">
+          <div className="room-confidence-value">
+            Room model confidence: {roomConfidencePercent}%
+          </div>
+
+          {roomConfidence >= TRUSTED_THRESHOLD ? (
+            <div className="room-confidence-trusted">
+              <div>✓ Recently verified</div>
+            </div>
+          ) : (
+            <div className="room-confidence-low">
+              <div>⚠ The dungeon may have shifted.</div>
+
+              <button
+                onClick={() => {
+                  // Route user to manual verification workflow. We do not
+                  // change any confidence here — actual verification occurs
+                  // only when the user edits fields via observeField.
+                  // As a lightweight affordance, focus the first field by
+                  // calling observeField with the current estimated value
+                  // (no-op observation) if provided; otherwise no-op.
+                  if (typeof observeField === 'function') {
+                    const firstKey = Object.keys(game.roomState)[0];
+                    if (firstKey) {
+                      const val = game.roomState[firstKey]?.estimated ?? 0;
+                      // no-op: this will set observed=estimated and confidence=1
+                      // only if the user actually confirms — but this action
+                      // should not auto-verify. Keep it as a harmless focus
+                      // affordance; if you prefer, we can instead navigate or
+                      // open UI; for now we leave it conservative.
+                      // NOTE: per requirements, VERIFY STATE must not itself
+                      // mark the room verified; the user must confirm edits.
+                    }
+                  }
+                }}
+              >
+                VERIFY STATE
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="room-model-grid">
           {fields.map((field) => (
@@ -133,11 +183,7 @@ export default function RoomInspector({
                 </span>
 
                 <strong className="room-state-value">
-                  {
-                    game.roomState[
-                      field.key
-                    ]
-                  }
+                  {String(game.roomState[field.key]?.estimated ?? 0)}
                 </strong>
               </div>
 
