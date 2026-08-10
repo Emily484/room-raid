@@ -150,7 +150,7 @@ export default function RoomInspector({
               <div className="slot-label">{(SCAN_SLOTS.find(s => s.id === slotId)?.label) ?? slotId}</div>
               <div className="scan-reference-thumbnails">
                 {items.map((it) => (
-                  <img key={it.id} src={it.previewUrl} alt={`${slotId} preview`} className="scan-reference-thumb" />
+                  <img key={it.id} src={it.url ?? it.previewUrl} alt={`${slotId} preview`} className="scan-reference-thumb" />
                 ))}
               </div>
               <div className="slot-count">{items.length} photos</div>

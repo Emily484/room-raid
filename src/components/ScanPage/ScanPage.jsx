@@ -51,34 +51,24 @@ function ScanSlot({
         break;
       }
 
-      const id =
-        `img-${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 9)}`;
-
-      const previewUrl =
-        URL.createObjectURL(file);
-
-      const dims =
-        await readImageDimensions(file);
+      // Read dimensions client-side if possible and then upload
+      let dims = { width: null, height: null };
+      try { dims = await readImageDimensions(file); } catch (e) {}
 
       const meta = {
-        id,
-        slotId: slot.id,
         fileName: file.name,
         mimeType: file.type,
         size: file.size,
         width: dims.width,
         height: dims.height,
-        addedAt: new Date().toISOString(),
-        previewUrl,
       };
 
-      await addImage(
-        slot.id,
-        file,
-        meta
-      );
+      try {
+        // addImage will upload and update shared scan state
+        await addImage(slot.id, file, meta);
+      } catch (e) {
+        setError(e.message || 'Upload failed');
+      }
 
       currentCount += 1;
     }
@@ -329,8 +319,7 @@ export default function ScanPage({ scanState }) {
       </footer>
 
       <p className="scan-temporary-note">
-        Photo attachments are temporary until server
-        storage is added.
+        Scan photos are stored locally by the Room Raid development server.
       </p>
     </main>
   );

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { SCAN_SLOTS } from '../data/scanSlots';
+import * as scansApi from '../api/scans.js';
 
 function makeEmptyScan() {
   const slots = Object.fromEntries(
@@ -20,95 +21,95 @@ function makeEmptyScan() {
 // Only safe metadata may be persisted externally. For now we keep everything
 // in memory; scans are session-only and image files do not survive refresh.
 export function useScanState(initial = null) {
-  const [scan, setScan] = useState(() => initial ?? makeEmptyScan());
-  // Keep a parallel in-memory map of files/preview URLs; not persisted.
+  const [scan, setScan] = useState(initial);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // filesRef remains for local optimistic previews (kept minimal)
   const filesRef = useState(() => ({}))[0];
 
-  // Cleanup on unmount: revoke any remaining object URLs. This effect
-  // runs when the hook owner unmounts (e.g., App unmount). It intentionally
-  // does not run on route navigation while App remains mounted.
-  // We reference filesRef directly which is a stable object.
   useEffect(() => {
-    return () => {
-      // revoke any remaining object URLs on unmount
+    let mounted = true;
+    async function load() {
       try {
-        for (const k of Object.keys(filesRef)) {
-          try { URL.revokeObjectURL(filesRef[k].previewUrl); } catch (e) {}
-          delete filesRef[k];
+        setLoading(true);
+        let current = await scansApi.getCurrentScan().catch(() => null);
+        if (!current) {
+          current = await scansApi.createScan();
         }
+        if (!mounted) return;
+        setScan(current);
       } catch (e) {
-        // swallow cleanup errors
+        setError(e);
+      } finally {
+        if (mounted) setLoading(false);
       }
-    };
-  }, [filesRef]);
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const refreshScan = useCallback(async () => {
+    try {
+      const s = await scansApi.getCurrentScan();
+      setScan(s);
+      return s;
+    } catch (e) {
+      setError(e);
+      throw e;
+    }
+  }, []);
 
   const addImage = useCallback(async (slotId, file, meta) => {
-    setScan((current) => {
-      const now = new Date().toISOString();
-      const next = {
-        ...current,
-        slots: { ...current.slots, [slotId]: [...(current.slots[slotId] ?? []), meta] },
-        updatedAt: now,
-      };
-      return next;
-    });
-
-    // store File object and preview url in filesRef under meta.id
-    filesRef[meta.id] = { file, previewUrl: meta.previewUrl };
-  }, [filesRef]);
-
-  const removeImage = useCallback((slotId, imageId) => {
-    setScan((current) => {
-      const now = new Date().toISOString();
-      const nextSlot = (current.slots[slotId] ?? []).filter((i) => i.id !== imageId);
-      const next = { ...current, slots: { ...current.slots, [slotId]: nextSlot }, updatedAt: now };
-      return next;
-    });
-
-    if (filesRef[imageId]) {
-      const { previewUrl } = filesRef[imageId];
-      try { URL.revokeObjectURL(previewUrl); } catch (e) {}
-      delete filesRef[imageId];
+    if (!scan || !scan.id) throw new Error('no scan');
+    // upload to server
+    try {
+      const result = await scansApi.uploadScanImage(scan.id, slotId, file, meta.width, meta.height);
+      // result: { image, scan }
+      setScan(result.scan);
+      return result.image;
+    } catch (e) {
+      setError(e);
+      throw e;
     }
-  }, [filesRef]);
+  }, [scan]);
 
-  const replaceImage = useCallback((slotId, imageId, newFile, newMeta) => {
-    setScan((current) => {
-      const now = new Date().toISOString();
-      const nextSlot = (current.slots[slotId] ?? []).map((i) => (i.id === imageId ? newMeta : i));
-      const next = { ...current, slots: { ...current.slots, [slotId]: nextSlot }, updatedAt: now };
-      return next;
-    });
-
-    if (filesRef[imageId]) {
-      try { URL.revokeObjectURL(filesRef[imageId].previewUrl); } catch (e) {}
-      delete filesRef[imageId];
+  const removeImage = useCallback(async (slotId, imageId) => {
+    if (!scan || !scan.id) throw new Error('no scan');
+    try {
+      const result = await scansApi.deleteScanImage(scan.id, imageId);
+      setScan(result.scan);
+      return true;
+    } catch (e) {
+      setError(e);
+      throw e;
     }
-    filesRef[newMeta.id] = { file: newFile, previewUrl: newMeta.previewUrl };
-  }, [filesRef]);
+  }, [scan]);
 
-  const clearScan = useCallback(() => {
-    // revoke all object URLs
-    for (const k of Object.keys(filesRef)) {
-      try { URL.revokeObjectURL(filesRef[k].previewUrl); } catch (e) {}
-      delete filesRef[k];
+  const clearScan = useCallback(async () => {
+    if (!scan || !scan.id) throw new Error('no scan');
+    try {
+      await scansApi.deleteScan(scan.id);
+      // create fresh scan
+      const fresh = await scansApi.createScan();
+      setScan(fresh);
+      return fresh;
+    } catch (e) {
+      setError(e);
+      throw e;
     }
-    setScan(makeEmptyScan());
-  }, [filesRef]);
+  }, [scan]);
 
-  const getFileForId = useCallback((id) => filesRef[id]?.file, [filesRef]);
-  const getPreviewForId = useCallback((id) => filesRef[id]?.previewUrl, [filesRef]);
-
-  const totalImages = useMemo(() => Object.values(scan.slots).flat().length, [scan]);
+  const totalImages = useMemo(() => (scan ? Object.values(scan.slots || {}).flat().length : 0), [scan]);
 
   return {
     scan,
+    loading,
+    error,
     addImage,
     removeImage,
-    replaceImage,
     clearScan,
-    getFileForId,
-    getPreviewForId,
+    refreshScan,
     totalImages,
   };
 }
