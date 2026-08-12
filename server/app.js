@@ -4,11 +4,12 @@ import { fileURLToPath } from 'url';
 import scansRouter from './routes/scans.js';
 import { createUploadHelpers } from './middleware/upload.js';
 import { createScanStore } from './services/scanStore.js';
+import { createRealVisionObserver } from './services/visionObserver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export function createApp({ dataDir, uploadsDir } = {}) {
+export function createApp({ dataDir, uploadsDir, visionObserver } = {}) {
   const app = express();
   app.use(express.json());
 
@@ -16,9 +17,27 @@ export function createApp({ dataDir, uploadsDir } = {}) {
   const uploadHelpers = createUploadHelpers({ uploadsDir });
   const scanStore = createScanStore({ dataDir, uploadsDir, deleteUploadedFileFn: uploadHelpers.deleteFile });
 
+  // visionObserver injection (mockable in tests)
+  let observer = visionObserver || null;
+  if (!observer) {
+    const apiKey = process.env.OPENAI_API_KEY || null;
+    if (apiKey) {
+      try {
+        observer = createRealVisionObserver({ apiKey, model: process.env.OPENAI_VISION_MODEL });
+      } catch (e) {
+        // don't crash the server if creation fails; leave observer null
+        // eslint-disable-next-line no-console
+        console.error('vision observer not initialized:', e && e.message ? e.message : e);
+        observer = null;
+      }
+    }
+  }
+
+
   // mount routes with store injection by attaching to req.app.locals
   app.locals.scanStore = scanStore;
   app.locals.uploadHelpers = uploadHelpers;
+  app.locals.visionObserver = observer;
 
   // ensure uploads dir exists
   uploadHelpers.ensureUploadsDir();

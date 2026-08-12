@@ -1,6 +1,9 @@
 import express from 'express';
 import multer from 'multer';
 import { SCAN_SLOTS } from '../../src/data/scanSlots.js';
+import { validateObservation } from '../services/visionObservationSchema.js';
+import { ConfigError, ProviderError, SchemaError } from '../services/visionObserver.js';
+import path from "path";
 
 const router = express.Router();
 
@@ -99,6 +102,69 @@ router.delete('/:scanId', async (req, res) => {
   const ok = await req.app.locals.scanStore.deleteScan(scanId);
   if (!ok) return res.status(404).json({ error: 'scan not found' });
   res.json({ ok: true });
+});
+
+// Analyze a scan using the configured vision observer
+router.post('/:scanId/analyze', async (req, res) => {
+  const { scanId } = req.params;
+  const scan = await req.app.locals.scanStore.getScan(scanId);
+  if (!scan) return res.status(404).json({ error: 'scan not found' });
+
+  const observer = req.app.locals.visionObserver;
+  if (!observer || typeof observer.analyzeScan !== 'function') {
+    return res.status(503).json({ error: 'vision observer not available' });
+  }
+
+  // Build imageFiles array: [{ slotId, image, path }]
+  const uploadHelpers = req.app.locals.uploadHelpers;
+  const imageFiles = [];
+  for (const [slotId, imgs] of Object.entries(scan.slots || {})) {
+    for (const img of imgs) {
+      const p = uploadHelpers
+  ? (
+      uploadHelpers.uploadsPath
+        ? path.join(
+            uploadHelpers.uploadsPath,
+            img.storedFileName
+          )
+        : null
+    )
+  : null;
+      imageFiles.push({ slotId, image: img, path: p });
+    }
+  }
+
+  try {
+    const result = await observer.analyzeScan({ scan, imageFiles });
+
+    // result expected shape: { model, observation }
+    const obs = result && result.observation ? result.observation : result;
+    const validObs = validateObservation(obs, scan);
+    if (!validObs) {
+      return res.status(502).json({ error: 'invalid analysis result' });
+    }
+
+    const analysisRecord = {
+      model: result && result.model ? result.model : (observer && observer.model) || 'unknown',
+      schemaVersion: obs.version || 1,
+      status: 'completed',
+      observation: obs,
+    };
+
+    const saved = await req.app.locals.scanStore.addAnalysisToScan(scanId, analysisRecord);
+    res.status(201).json({ analysis: saved, scan: await req.app.locals.scanStore.getScan(scanId) });
+  } catch (err) {
+    // classify errors
+    // eslint-disable-next-line no-console
+    console.error('analysis error', err && err.stack ? err.stack : err && err.message ? err.message : err);
+    if (err instanceof ConfigError) {
+      return res.status(503).json({ error: 'Vision analysis is not configured.' });
+    }
+    if (err instanceof ProviderError || err instanceof SchemaError) {
+      return res.status(502).json({ error: 'analysis provider error' });
+    }
+    return res.status(500).json({ error: 'analysis failed' });
+  }
 });
 
 export default router;

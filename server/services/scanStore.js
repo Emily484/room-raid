@@ -124,6 +124,30 @@ export function createScanStore({ dataDir, uploadsDir, deleteUploadedFileFn } = 
       return image;
     },
 
+    async addAnalysisToScan(scanId, analysis) {
+      const store = readStore();
+      const scan = store.scans.find(s => s.id === scanId);
+      if (!scan) throw new Error('scan not found');
+
+      if (!scan.analyses) scan.analyses = [];
+
+      const now = new Date().toISOString();
+      const entry = Object.assign({
+        id: generateId('analysis'),
+        createdAt: now,
+        model: analysis.model || 'unknown',
+        schemaVersion: (analysis.schemaVersion || (analysis.observation && analysis.observation.version) || (analysis.version || 1)),
+        status: analysis.status || 'complete',
+        scanUpdatedAt: scan.updatedAt,
+        observation: analysis.observation || analysis,
+      }, analysis);
+
+      scan.analyses.push(entry);
+      // do not update scan.updatedAt when adding an analysis (observer-only)
+      writeStore(store);
+      return entry;
+    },
+
     async removeImageFromScan(scanId, imageId) {
       const store = readStore();
       const scan = store.scans.find(s => s.id === scanId);
