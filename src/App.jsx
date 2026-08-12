@@ -87,6 +87,7 @@ function App() {
     resetGame,
     applyEffectsToRoom,
     observeFieldInRoom,
+    approveObservedField,
   } = useGameState();
 
   // Shared scan state for /scan and the Room Inspector (Developer page).

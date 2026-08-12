@@ -1,4 +1,5 @@
 import { getEstimated, ensureField, setEstimated, observeField } from './roomFields.js';
+import { applyCalibrationToProposal } from './calibration.js';
 
 // Configurable thresholds
 export const RECONCILIATION_CONFIG = {
@@ -168,7 +169,9 @@ export function generateProposals({ roomState, analysis, config = RECONCILIATION
 
   const proposals = analysis.observation.observations.map(obs => {
     const curr = getEstimated(roomState, obs.field);
-    return generateProposalForObservation({ roomState, observation: obs, currentValue: curr, config });
+    const raw = generateProposalForObservation({ roomState, observation: obs, currentValue: curr, config });
+    // apply calibration: returns a copy with rawProposedValue and proposedValue
+    return applyCalibrationToProposal(raw);
   });
 
   return proposals;

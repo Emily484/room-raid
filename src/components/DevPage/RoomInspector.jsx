@@ -5,6 +5,8 @@ import { calculateRoomConfidence } from "../../game/roomFields";
 import { SCAN_SLOTS } from '../../data/scanSlots';
 import './RoomInspector.css';
 import { generateProposals, getLatestCompletedAnalysis, isAnalysisStale, getEvidenceImages } from '../../game/reconciliation.js';
+import { recordCalibrationFeedback, summarizeCalibration, getCalibrationRule } from '../../game/calibration.js';
+import { useEffect } from 'react';
 
 const correctionFactors = {
   muchLess: 0.5,
@@ -38,6 +40,12 @@ export default function RoomInspector({
   const latestAnalysis = getLatestCompletedAnalysis(scan);
   const stale = isAnalysisStale(scan, latestAnalysis);
   const proposals = latestAnalysis ? generateProposals({ roomState: game.roomState, analysis: latestAnalysis }) : [];
+  const [calibrationInputs, setCalibrationInputs] = useState({});
+  const [calibrationSummary, setCalibrationSummary] = useState([]);
+
+  useEffect(() => {
+    setCalibrationSummary(summarizeCalibration());
+  }, []);
 
   const fields = [
     {
@@ -219,6 +227,62 @@ export default function RoomInspector({
                               }
                             }}>Accept</button>
                             <button onClick={() => { /* keep current — no-op */ }}>Keep Current</button>
+                          </div>
+
+                          <div className="calibration-feedback">
+                            <div><strong>How good was this estimate?</strong></div>
+                            <div style={{ marginTop: 6 }}>
+                              <label style={{ marginRight: 8 }}>
+                                <input type="radio" name={`verdict-${idx}`} value="accurate" onChange={() => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), verdict: 'accurate' } }))} /> Accurate
+                              </label>
+                              <label style={{ marginRight: 8 }}>
+                                <input type="radio" name={`verdict-${idx}`} value="too_high" onChange={() => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), verdict: 'too_high' } }))} /> Too High
+                              </label>
+                              <label style={{ marginRight: 8 }}>
+                                <input type="radio" name={`verdict-${idx}`} value="too_low" onChange={() => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), verdict: 'too_low' } }))} /> Too Low
+                              </label>
+                              <label>
+                                <input type="radio" name={`verdict-${idx}`} value="wrong_type" onChange={() => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), verdict: 'wrong_type' } }))} /> Wrong Type
+                              </label>
+                            </div>
+
+                            <div style={{ marginTop: 6 }}>
+                              <label>
+                                Corrected value (optional):
+                                <input type="number" value={(calibrationInputs[idx] && calibrationInputs[idx].correctedValue) ?? ''} onChange={(e) => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), correctedValue: e.target.value === '' ? '' : Number(e.target.value) } }))} style={{ marginLeft: 6, width: 100 }} />
+                              </label>
+                            </div>
+
+                            <div style={{ marginTop: 6 }}>
+                              <button onClick={() => {
+                                const inpt = calibrationInputs[idx] || {};
+                                try {
+                                  if (!inpt.verdict) {
+                                    alert('Please select a verdict');
+                                    return;
+                                  }
+
+                                  const payload = {
+                                    analysisId: latestAnalysis?.id ?? null,
+                                    scanId: scan?.id ?? null,
+                                    field: p.field,
+                                    currentValue: typeof p.currentValue === 'number' ? p.currentValue : null,
+                                    rawVisionEstimate: p.observation?.estimatedRange ?? p.observation?.percentEstimate ?? null,
+                                    proposedValue: typeof p.rawProposedValue === 'number' ? p.rawProposedValue : (typeof p.proposedValue === 'number' ? p.proposedValue : null),
+                                    verdict: inpt.verdict,
+                                    correctedValue: typeof inpt.correctedValue === 'number' ? inpt.correctedValue : null,
+                                    confidence: typeof p.confidence === 'number' ? p.confidence : null,
+                                  };
+
+                                  recordCalibrationFeedback(payload);
+                                  setCalibrationSummary(summarizeCalibration());
+                                  // reset inputs for this proposal
+                                  setCalibrationInputs(current => ({ ...current, [idx]: {} }));
+                                } catch (err) {
+                                  alert(String(err));
+                                }
+                              }}>Save Feedback</button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -423,6 +487,47 @@ export default function RoomInspector({
             </strong>
           </div>
         </div>
+      </div>
+
+      <div className="calibration-summary-panel">
+        <h3>Calibration Summary</h3>
+        {calibrationSummary.length === 0 ? (
+          <div>No calibration feedback recorded yet.</div>
+        ) : (
+          <div>
+            {calibrationSummary.map((s) => (
+              <div key={s.field} style={{ borderBottom: '1px solid #eee', padding: 8 }}>
+                <strong>{s.field}</strong>
+                <div>Samples: {s.samples}</div>
+                <div>Accurate: {s.accurate} · Too high: {s.too_high} · Too low: {s.too_low} · Wrong type: {s.wrong_type}</div>
+                <div>Mean signed error: {s.meanSignedError === null ? '—' : s.meanSignedError.toFixed(2)}</div>
+                <div>Mean absolute error: {s.meanAbsoluteError === null ? '—' : s.meanAbsoluteError.toFixed(2)}</div>
+                <div>Suggested offset: {s.suggestedOffset === null ? '—' : s.suggestedOffset}</div>
+                <div>Enough samples: {s.enoughSamples ? 'Yes' : `No (need ${MIN_CALIBRATION_SAMPLES})`}</div>
+                {s.enoughSamples && (
+                  <div style={{ marginTop: 6 }}>
+                    <button onClick={() => {
+                      // Apply calibration rule: explicit action required. Load existing rule and update its offset.
+                      const rule = getCalibrationRule(s.field);
+                      if (!rule) {
+                        alert('No calibration rule available for this field');
+                        return;
+                      }
+
+                      const confirmed = confirm(`Apply suggested offset ${s.suggestedOffset} to ${s.field}? This will update the local calibration rule.`);
+                      if (!confirmed) return;
+
+                      // Update FIELD_CALIBRATION in-place (deliberate local change). This persists only in-memory; for now we mutate the exported object.
+                      rule.offset = s.suggestedOffset;
+                      alert('Calibration rule updated locally. Future proposals will show calibrated values.');
+                      setCalibrationSummary(summarizeCalibration());
+                    }}>Apply Calibration Rule</button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

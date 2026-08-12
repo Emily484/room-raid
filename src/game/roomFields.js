@@ -43,6 +43,13 @@ export function getEstimated(state, key) {
   return typeof v === 'number' ? v : 0;
 }
 
+export function getField(state, key) {
+  // Return a canonical, non-mutating field object for display/readers.
+  // This does not modify the source state.
+  const v = state?.[key];
+  return makeFieldFromValue(v);
+}
+
 export function setEstimated(nextState, key, value) {
   ensureField(nextState, key);
   const num = Number.isFinite(value) ? value : nextState[key].estimated ?? 0;
