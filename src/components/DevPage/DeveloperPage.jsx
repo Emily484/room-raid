@@ -67,6 +67,7 @@ export default function DeveloperPage({
   game,
   applyEffects,
   observeField,
+  approveObservedField,
   scanState,
 }) {
   const location = useLocation();
@@ -326,6 +327,7 @@ export default function DeveloperPage({
           game={game}
           applyEffects={applyEffects}
           observeField={observeField}
+          approveObservedField={approveObservedField}
           scanState={scanState}
         />
       </section>
@@ -345,6 +347,11 @@ export default function DeveloperPage({
           roomState={
             game.roomState
           }
+          analysis={undefined}
+          onApproveProposal={(p) => {
+            if (!p || typeof p.proposedValue !== 'number') return;
+            approveObservedField && approveObservedField({ field: p.field, value: p.proposedValue, confidence: p.confidence, observedAt: new Date().toISOString() });
+          }}
         />
       </section>
     </main>

@@ -366,6 +366,8 @@ function App() {
               applyEffects={
                 applyEffectsToRoom
               }
+              observeField={observeFieldInRoom}
+              approveObservedField={approveObservedField}
               scanState={scanState}
             />
           }

@@ -4,6 +4,7 @@ import { calculateDerivedState } from "../../game/derivedState";
 import { calculateRoomConfidence } from "../../game/roomFields";
 import { SCAN_SLOTS } from '../../data/scanSlots';
 import './RoomInspector.css';
+import { generateProposals, getLatestCompletedAnalysis, isAnalysisStale } from '../../game/reconciliation.js';
 
 const correctionFactors = {
   muchLess: 0.5,
@@ -16,6 +17,7 @@ export default function RoomInspector({
   game,
   applyEffects,
   observeField,
+  approveObservedField,
   scanState,
 }) {
   const derived = calculateDerivedState(
@@ -31,6 +33,11 @@ export default function RoomInspector({
 
   const scan = scanState?.scan;
   const totalScanImages = scanState?.totalImages ?? 0;
+
+  // Reconciliation: select latest completed analysis and generate proposals
+  const latestAnalysis = getLatestCompletedAnalysis(scan);
+  const stale = isAnalysisStale(scan, latestAnalysis);
+  const proposals = latestAnalysis ? generateProposals({ roomState: game.roomState, analysis: latestAnalysis }) : [];
 
   const fields = [
     {
@@ -169,6 +176,37 @@ export default function RoomInspector({
           <Link to="/scan">Edit Scan</Link>
         </div>
       </aside>
+              
+              <div className="reconciliation-panel">
+                <h4>Vision Reconciliation</h4>
+                {latestAnalysis ? (
+                  <div>
+                    {stale && (
+                      <div className="stale-warning">Analysis is stale because the scan changed after it was analyzed. Run a fresh analysis before applying changes.</div>
+                    )}
+
+                    {proposals.map((p, idx) => (
+                      <div key={idx} className="proposal-item">
+                        <div><strong>{p.field}</strong> — Current: {String(p.currentValue)} · Suggested: {p.proposedValue === null ? '—' : String(p.proposedValue)}</div>
+                        <div>Confidence: {p.confidence ?? '—'} · Recommendation: {p.recommendation} · {p.disagreement}</div>
+                        <div>
+                          <button disabled={stale || p.proposedValue === null} onClick={() => {
+                            // Controller-level guard
+                            if (stale) return;
+                            if (!p || typeof p.proposedValue !== 'number') return;
+                            if (typeof approveObservedField === 'function') {
+                              approveObservedField({ field: p.field, value: p.proposedValue, confidence: p.confidence, observedAt: latestAnalysis?.createdAt });
+                            }
+                          }}>Accept</button>
+                          <button onClick={() => { /* keep current — no-op */ }}>Keep Current</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div>No completed analyses</div>
+                )}
+              </div>
       <div className="room-inspector-panel">
         <h3>Room Model</h3>
 

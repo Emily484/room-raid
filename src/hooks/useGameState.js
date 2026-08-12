@@ -297,11 +297,31 @@ export function useGameState() {
     });
   }
 
+  // Canonical approval pathway: explicit observation-backed updates coming
+  // from reconciliation approval. This ensures we preserve shape and trigger
+  // derived-state and quest recalculation through the normal game flow.
+  function approveObservedField({ field, value, confidence, observedAt }) {
+    setGame((current) => {
+      // Use the existing observeField helper to set observed/estimated and timestamp
+      const nextRoomState = observeFieldHelper(current.roomState, field, value, observedAt || new Date().toISOString());
+      // Copy confidence into the field if provided
+      if (typeof confidence === 'number') {
+        nextRoomState[field] = { ...nextRoomState[field], confidence };
+      }
+
+      return {
+        ...current,
+        roomState: nextRoomState,
+      };
+    });
+  }
+
   return {
     game,
     completeQuest,
     resetGame,
     applyEffectsToRoom,
     observeFieldInRoom,
+    approveObservedField,
   };
 }

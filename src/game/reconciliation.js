@@ -214,3 +214,19 @@ export default {
   rejectProposal,
   approveAllHighConfidence,
 };
+
+// Helper: select newest completed analysis from a scan object
+export function getLatestCompletedAnalysis(scan) {
+  if (!scan || !Array.isArray(scan.analyses)) return null;
+  // completed analyses are those with a truthy 'completed' flag or a status; be permissive
+  const completed = scan.analyses.filter(a => a && (a.status === 'completed' || a.completed));
+  if (completed.length === 0) return null;
+  completed.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return completed[0];
+}
+
+// Helper: determine if an analysis is stale relative to the scan
+export function isAnalysisStale(scan, analysis) {
+  if (!scan || !analysis) return true;
+  return (analysis.scanUpdatedAt !== scan.updatedAt);
+}
