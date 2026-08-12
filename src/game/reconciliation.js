@@ -230,3 +230,18 @@ export function isAnalysisStale(scan, analysis) {
   if (!scan || !analysis) return true;
   return (analysis.scanUpdatedAt !== scan.updatedAt);
 }
+
+// Resolve evidence entries to persisted scan image records.
+export function getEvidenceImages(scan, evidence = []) {
+  if (!scan || typeof scan !== 'object' || !Array.isArray(evidence)) return [];
+
+  const slots = scan.slots || {};
+
+  return evidence.map(ev => {
+    if (!ev || typeof ev.slotId !== 'string' || typeof ev.imageId !== 'string') return null;
+    const slot = slots[ev.slotId];
+    if (!Array.isArray(slot)) return null;
+    const found = slot.find(i => i && i.id === ev.imageId);
+    return found || null;
+  }).filter(Boolean);
+}

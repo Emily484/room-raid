@@ -4,7 +4,7 @@ import { calculateDerivedState } from "../../game/derivedState";
 import { calculateRoomConfidence } from "../../game/roomFields";
 import { SCAN_SLOTS } from '../../data/scanSlots';
 import './RoomInspector.css';
-import { generateProposals, getLatestCompletedAnalysis, isAnalysisStale } from '../../game/reconciliation.js';
+import { generateProposals, getLatestCompletedAnalysis, isAnalysisStale, getEvidenceImages } from '../../game/reconciliation.js';
 
 const correctionFactors = {
   muchLess: 0.5,
@@ -185,23 +185,44 @@ export default function RoomInspector({
                       <div className="stale-warning">Analysis is stale because the scan changed after it was analyzed. Run a fresh analysis before applying changes.</div>
                     )}
 
-                    {proposals.map((p, idx) => (
-                      <div key={idx} className="proposal-item">
-                        <div><strong>{p.field}</strong> — Current: {String(p.currentValue)} · Suggested: {p.proposedValue === null ? '—' : String(p.proposedValue)}</div>
-                        <div>Confidence: {p.confidence ?? '—'} · Recommendation: {p.recommendation} · {p.disagreement}</div>
-                        <div>
-                          <button disabled={stale || p.proposedValue === null} onClick={() => {
-                            // Controller-level guard
-                            if (stale) return;
-                            if (!p || typeof p.proposedValue !== 'number') return;
-                            if (typeof approveObservedField === 'function') {
-                              approveObservedField({ field: p.field, value: p.proposedValue, confidence: p.confidence, observedAt: latestAnalysis?.createdAt });
-                            }
-                          }}>Accept</button>
-                          <button onClick={() => { /* keep current — no-op */ }}>Keep Current</button>
+                    {proposals.map((p, idx) => {
+                      const evidenceImages = getEvidenceImages(scan, p.evidence || []);
+                      return (
+                        <div key={idx} className="reconciliation-proposal">
+                          <div className="reconciliation-field"><strong>{p.field}</strong></div>
+                          <div className="reconciliation-values">
+                            <div>Current: {String(p.currentValue)}</div>
+                            <div>Suggested: {p.proposedValue === null ? '—' : String(p.proposedValue)}</div>
+                            <div>Vision: {p.observation?.estimatedRange ? `${p.observation.estimatedRange.min}–${p.observation.estimatedRange.max}` : (p.observation?.percentEstimate ? `${p.observation.percentEstimate.min}–${p.observation.percentEstimate.max}%` : '')}</div>
+                            <div className="reconciliation-confidence">Confidence: {p.confidence ?? '—'}</div>
+                            <div className="reconciliation-reason">{p.rationale ?? p.reason}</div>
+                            <div className="reconciliation-badge">{p.disagreement}</div>
+                          </div>
+
+                          <div className="reconciliation-evidence">
+                            <div className="evidence-label">EVIDENCE</div>
+                            <div className="evidence-thumbs">
+                              {evidenceImages.map((img, j) => (
+                                <a key={j} href={img.url} target="_blank" rel="noreferrer" title={SCAN_SLOTS.find(s => s.id === img.slotId)?.label ?? img.slotId}>
+                                  <img className="reconciliation-thumb" src={img.url} alt={`evidence ${img.id} (${img.slotId})`} />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="reconciliation-actions">
+                            <button disabled={stale || p.proposedValue === null} onClick={() => {
+                              if (stale) return;
+                              if (!p || typeof p.proposedValue !== 'number') return;
+                              if (typeof approveObservedField === 'function') {
+                                approveObservedField({ field: p.field, value: p.proposedValue, confidence: p.confidence, observedAt: latestAnalysis?.createdAt });
+                              }
+                            }}>Accept</button>
+                            <button onClick={() => { /* keep current — no-op */ }}>Keep Current</button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div>No completed analyses</div>
