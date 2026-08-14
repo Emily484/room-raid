@@ -2,6 +2,7 @@
 // Stores feedback in localStorage under a dedicated key.
 
 const STORAGE_KEY = 'roomRaidCalibration';
+const RULES_KEY = 'roomRaidCalibrationRules';
 
 export const MIN_CALIBRATION_SAMPLES = 3;
 
@@ -29,8 +30,20 @@ export const FIELD_CALIBRATION = {
   },
 };
 
+// Freeze defaults to prevent accidental mutation of canonical rules.
+try {
+  Object.keys(FIELD_CALIBRATION).forEach(k => {
+    const r = FIELD_CALIBRATION[k];
+    if (r && typeof r === 'object') Object.freeze(r);
+  });
+  Object.freeze(FIELD_CALIBRATION);
+} catch (e) {
+  // ignore in environments that don't support freezing
+}
+
 function loadAll() {
   try {
+    if (typeof localStorage === 'undefined' || localStorage === null) return [];
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     return JSON.parse(raw);
@@ -42,13 +55,78 @@ function loadAll() {
 
 function saveAll(records) {
   try {
+    if (typeof localStorage === 'undefined' || localStorage === null) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
   } catch (e) {
     console.error('Could not save calibration records:', e);
   }
 }
 
+function loadRulesRaw() {
+  try {
+    if (typeof localStorage === 'undefined' || localStorage === null) return {};
+    const raw = localStorage.getItem(RULES_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Could not load calibration rules:', e);
+    return {};
+  }
+}
+
+function saveRulesRaw(obj) {
+  try {
+    if (typeof localStorage === 'undefined' || localStorage === null) return;
+    localStorage.setItem(RULES_KEY, JSON.stringify(obj));
+  } catch (e) {
+    console.error('Could not save calibration rules:', e);
+  }
+}
+
+export function loadCalibrationRules() {
+  return loadRulesRaw();
+}
+
+function isValidRuleShape(rule) {
+  if (!rule || typeof rule !== 'object') return false;
+  if (!Object.prototype.hasOwnProperty.call(rule, 'multiplier')) return false;
+  if (!Object.prototype.hasOwnProperty.call(rule, 'offset')) return false;
+  if (typeof rule.multiplier !== 'number' || !Number.isFinite(rule.multiplier)) return false;
+  if (typeof rule.offset !== 'number' || !Number.isFinite(rule.offset)) return false;
+  return true;
+}
+
+export function saveCalibrationRule(field, rule) {
+  if (!FIELD_CALIBRATION[field]) throw new Error('Unknown field');
+  if (!isValidRuleShape(rule)) throw new Error('Invalid rule');
+
+  const raw = loadRulesRaw();
+  raw[field] = { multiplier: rule.multiplier, offset: rule.offset };
+  saveRulesRaw(raw);
+  return raw[field];
+}
+
+export function clearCalibrationRule(field) {
+  const raw = loadRulesRaw();
+  if (Object.prototype.hasOwnProperty.call(raw, field)) {
+    delete raw[field];
+    saveRulesRaw(raw);
+  }
+}
+
+export function getEffectiveCalibrationRule(field) {
+  const base = FIELD_CALIBRATION[field];
+  if (!base) return null;
+  const overrides = loadRulesRaw();
+  const override = overrides[field];
+  if (!override) return { ...base };
+  // Validate override; if invalid, ignore and fall back to base
+  if (!isValidRuleShape(override)) return { ...base };
+  return { ...base, multiplier: override.multiplier, offset: override.offset };
+}
+
 export function getCalibrationRule(field) {
+  // Deprecated: returns default only. Use getEffectiveCalibrationRule when you want persistence-aware rule.
   return FIELD_CALIBRATION[field] ?? null;
 }
 
@@ -60,7 +138,7 @@ export function applyCalibrationToProposal(proposal) {
   const raw = proposal.proposedValue === undefined ? null : proposal.proposedValue;
   const field = proposal.field;
 
-  const cfg = getCalibrationRule(field);
+  const cfg = getEffectiveCalibrationRule(field);
   if (!cfg || raw === null || raw === undefined || typeof raw !== 'number') {
     // nothing to do
     return { ...proposal, rawProposedValue: raw, proposedValue: raw, calibration: { applied: false } };

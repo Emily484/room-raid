@@ -1,13 +1,23 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { generateProposalForObservation, generateProposals } from '../../../src/game/reconciliation.js';
-import { FIELD_CALIBRATION } from '../../../src/game/calibration.js';
+import { FIELD_CALIBRATION, saveCalibrationRule, clearCalibrationRule } from '../../../src/game/calibration.js';
 
 beforeEach(() => {
-  // reset any local calibration tweaks
-  if (FIELD_CALIBRATION.clothingOnFloor) {
-    FIELD_CALIBRATION.clothingOnFloor.multiplier = 1;
-    FIELD_CALIBRATION.clothingOnFloor.offset = 0;
+  // Provide localStorage shim for test environment and ensure persisted overrides cleared
+  if (typeof localStorage === 'undefined' || localStorage === null) {
+    global.localStorage = (function () {
+      let store = {};
+      return {
+        getItem(key) { return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null; },
+        setItem(key, value) { store[key] = String(value); },
+        removeItem(key) { delete store[key]; },
+        clear() { store = {}; },
+      };
+    })();
   }
+
+  // ensure persisted overrides cleared
+  try { clearCalibrationRule('clothingOnFloor'); } catch (e) {}
 });
 
 describe('reconciliation + calibration integration', () => {
@@ -23,8 +33,8 @@ describe('reconciliation + calibration integration', () => {
     expect(p.proposedValue).toBeDefined();
     expect(p.rawProposedValue).toBe(p.proposedValue);
 
-    // apply offset
-    FIELD_CALIBRATION.clothingOnFloor.offset = -10;
+    // apply offset via persisted override
+    saveCalibrationRule('clothingOnFloor', { multiplier: 1, offset: -10 });
     const proposals2 = generateProposals({ roomState, analysis });
     const p2 = proposals2[0];
     expect(p2.rawProposedValue).toBeDefined();

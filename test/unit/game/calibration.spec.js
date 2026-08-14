@@ -28,17 +28,17 @@ describe('calibration math and storage', () => {
     expect(out.rawProposedValue).toBe(10);
     expect(out.proposedValue).toBe(10);
 
-    // mutate rule locally
-    cfg.offset = -5;
-    const out2 = applyCalibrationToProposal({ field: 'clothingOnFloor', proposedValue: 3 });
+  // apply override via persistence helper (do not mutate canonical defaults)
+  const { saveCalibrationRule } = require('../../../src/game/calibration.js');
+  saveCalibrationRule('clothingOnFloor', { multiplier: 1, offset: -5 });
+  const out2 = applyCalibrationToProposal({ field: 'clothingOnFloor', proposedValue: 3 });
     expect(out2.rawProposedValue).toBe(3);
     // 3 + (-5) => -2, clamp to 0 for count
     expect(out2.proposedValue).toBe(0);
 
-    // percent clamp
-    const percCfg = FIELD_CALIBRATION.surfaceClutter;
-    percCfg.multiplier = 1.2;
-    percCfg.offset = 10;
+    // percent clamp via persisted override
+    const { saveCalibrationRule: saveRule2 } = require('../../../src/game/calibration.js');
+    saveRule2('surfaceClutter', { multiplier: 1.2, offset: 10 });
     const out3 = applyCalibrationToProposal({ field: 'surfaceClutter', proposedValue: 90 });
     expect(out3.proposedValue).toBe(100); // clamped
   });

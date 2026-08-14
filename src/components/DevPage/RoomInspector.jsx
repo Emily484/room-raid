@@ -5,7 +5,7 @@ import { calculateRoomConfidence } from "../../game/roomFields";
 import { SCAN_SLOTS } from '../../data/scanSlots';
 import './RoomInspector.css';
 import { generateProposals, getLatestCompletedAnalysis, isAnalysisStale, getEvidenceImages } from '../../game/reconciliation.js';
-import { recordCalibrationFeedback, summarizeCalibration, getCalibrationRule } from '../../game/calibration.js';
+import { recordCalibrationFeedback, summarizeCalibration, getCalibrationRule, saveCalibrationRule, getEffectiveCalibrationRule, clearCalibrationRule, loadCalibrationRules } from '../../game/calibration.js';
 import { useEffect } from 'react';
 
 const correctionFactors = {
@@ -42,10 +42,17 @@ export default function RoomInspector({
   const proposals = latestAnalysis ? generateProposals({ roomState: game.roomState, analysis: latestAnalysis }) : [];
   const [calibrationInputs, setCalibrationInputs] = useState({});
   const [calibrationSummary, setCalibrationSummary] = useState([]);
+  const [rulesVersion, setRulesVersion] = useState(0);
 
   useEffect(() => {
     setCalibrationSummary(summarizeCalibration());
   }, []);
+
+  // helper to refresh rules-driven UI
+  function refreshRules() {
+    setCalibrationSummary(summarizeCalibration());
+    setRulesVersion(v => v + 1);
+  }
 
   const fields = [
     {
@@ -195,17 +202,33 @@ export default function RoomInspector({
 
                     {proposals.map((p, idx) => {
                       const evidenceImages = getEvidenceImages(scan, p.evidence || []);
+                      const effRule = getEffectiveCalibrationRule(p.field);
+                      // if rulesVersion changes, React will rerender and recompute proposals
+                      const activeOverride = (() => {
+                        const overrides = loadCalibrationRules();
+                        return overrides && overrides[p.field] ? overrides[p.field] : null;
+                      })();
+
                       return (
                         <div key={idx} className="reconciliation-proposal">
                           <div className="reconciliation-field"><strong>{p.field}</strong></div>
                           <div className="reconciliation-values">
                             <div>Current: {String(p.currentValue)}</div>
-                            <div>Suggested: {p.proposedValue === null ? '—' : String(p.proposedValue)}</div>
+                            <div>Raw suggestion: {p.rawProposedValue === null || p.rawProposedValue === undefined ? '—' : String(p.rawProposedValue)}</div>
+                            <div>Calibrated suggestion: {p.proposedValue === null || p.proposedValue === undefined ? '—' : String(p.proposedValue)}</div>
                             <div>Vision: {p.observation?.estimatedRange ? `${p.observation.estimatedRange.min}–${p.observation.estimatedRange.max}` : (p.observation?.percentEstimate ? `${p.observation.percentEstimate.min}–${p.observation.percentEstimate.max}%` : '')}</div>
                             <div className="reconciliation-confidence">Confidence: {p.confidence ?? '—'}</div>
                             <div className="reconciliation-reason">{p.rationale ?? p.reason}</div>
                             <div className="reconciliation-badge">{p.disagreement}</div>
                           </div>
+
+                          {activeOverride && (
+                            <div className="active-calibration" style={{ marginTop: 6 }}>
+                              <div><strong>Active calibration:</strong></div>
+                              <div>Multiplier: {activeOverride.multiplier}</div>
+                              <div>Offset: {activeOverride.offset}</div>
+                            </div>
+                          )}
 
                           <div className="reconciliation-evidence">
                             <div className="evidence-label">EVIDENCE</div>
@@ -507,21 +530,35 @@ export default function RoomInspector({
                 {s.enoughSamples && (
                   <div style={{ marginTop: 6 }}>
                     <button onClick={() => {
-                      // Apply calibration rule: explicit action required. Load existing rule and update its offset.
-                      const rule = getCalibrationRule(s.field);
-                      if (!rule) {
+                      const eff = getEffectiveCalibrationRule(s.field);
+                      if (!eff) {
                         alert('No calibration rule available for this field');
                         return;
                       }
 
-                      const confirmed = confirm(`Apply suggested offset ${s.suggestedOffset} to ${s.field}? This will update the local calibration rule.`);
+                      const confirmed = confirm(`Apply suggested offset ${s.suggestedOffset} to ${s.field}? This will persist the override to localStorage.`);
                       if (!confirmed) return;
 
-                      // Update FIELD_CALIBRATION in-place (deliberate local change). This persists only in-memory; for now we mutate the exported object.
-                      rule.offset = s.suggestedOffset;
-                      alert('Calibration rule updated locally. Future proposals will show calibrated values.');
-                      setCalibrationSummary(summarizeCalibration());
+                      try {
+                        saveCalibrationRule(s.field, { multiplier: eff.multiplier, offset: s.suggestedOffset });
+                        alert('Calibration rule persisted locally. Future proposals will show calibrated values.');
+                        refreshRules();
+                      } catch (err) {
+                        alert(String(err));
+                      }
                     }}>Apply Calibration Rule</button>
+
+                    <button style={{ marginLeft: 8 }} onClick={() => {
+                      // Reset calibration for this field
+                      const confirmed = confirm(`Reset calibration for ${s.field}? This will remove any persisted override.`);
+                      if (!confirmed) return;
+                      try {
+                        clearCalibrationRule(s.field);
+                        refreshRules();
+                      } catch (err) {
+                        alert(String(err));
+                      }
+                    }}>Reset Calibration</button>
                   </div>
                 )}
               </div>
