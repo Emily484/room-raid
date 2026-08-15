@@ -89,6 +89,8 @@ export function createRealVisionObserver({ apiKey, model } = {}) {
     const inputMessage = { role: 'user', content: messageContent };
 
     try {
+      // Diagnostic: log that we're about to call the provider (do NOT include any secrets or data URIs)
+      try { console.info('[diagnostic] calling provider', { scanId: scan && scan.id ? scan.id : null, images: imageFiles.length }); } catch (e) {}
       // Use the SDK's structured output parsing entrypoint (responses.parse)
       const resp = await client.responses.parse({
         model: modelName,
@@ -103,10 +105,15 @@ export function createRealVisionObserver({ apiKey, model } = {}) {
         }
       });
 
+      // Diagnostic: provider returned; do not log content
+      try { console.info('[diagnostic] provider returned', { scanId: scan && scan.id ? scan.id : null, hasParsedOutput: !!(resp && resp.output_parsed) }); } catch (e) {}
+
       const parsed = resp && resp.output_parsed ? resp.output_parsed : null;
 
       if (!parsed) throw new SchemaError('missing structured output from provider');
 
+      // Diagnostic: about to run validation
+      try { console.info('[diagnostic] validating parsed observation', { scanId: scan && scan.id ? scan.id : null }); } catch (e) {}
       const validation = validateObservationDetailed ? validateObservationDetailed(parsed, scan) : { valid: validateObservation(parsed, scan), errors: [] };
       if (!validation.valid) {
         if (process.env.NODE_ENV !== 'production') {
@@ -129,8 +136,16 @@ export function createRealVisionObserver({ apiKey, model } = {}) {
         throw new SchemaError('provider returned invalid observation');
       }
 
+      // Diagnostic: success path reaching return
+      try { console.info('[diagnostic] parsed observation valid', { scanId: scan && scan.id ? scan.id : null }); } catch (e) {}
       return { model: modelName, observation: parsed };
     } catch (err) {
+      // Diagnostic: capture error class/name/message before rethrowing
+      try {
+        const name = err && err.name ? err.name : (err && err.constructor && err.constructor.name ? err.constructor.name : 'Error');
+        const message = err && err.message ? err.message : String(err);
+        console.error('[diagnostic] provider error', { scanId: scan && scan.id ? scan.id : null, name, message });
+      } catch (e) {}
       // classify errors
       if (err instanceof SchemaError) throw err;
       // Map OpenAI errors to ProviderError

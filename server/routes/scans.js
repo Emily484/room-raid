@@ -134,6 +134,21 @@ router.post('/:scanId/analyze', async (req, res) => {
     }
   }
 
+  // Diagnostic logging (temporary): report scan and imageFiles info before analysis
+  try {
+    console.info('[diagnostic] analyze request', { scanId, imageFilesCount: imageFiles.length });
+    for (const f of imageFiles) {
+      const sf = f.image && f.image.storedFileName ? f.image.storedFileName : null;
+      const exists = f.path ? require('fs').existsSync(f.path) : false;
+      // Do NOT log file contents or data URIs
+      console.info('[diagnostic] image', { slotId: f.slotId, storedFileName: sf, path: f.path || null, exists });
+    }
+  } catch (diagErr) {
+    // swallow diagnostic errors to avoid changing behavior
+    // eslint-disable-next-line no-console
+    console.error('[diagnostic] analyze logging failed', diagErr && diagErr.message ? diagErr.message : diagErr);
+  }
+
   try {
     const result = await observer.analyzeScan({ scan, imageFiles });
 

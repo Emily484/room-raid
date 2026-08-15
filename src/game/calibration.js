@@ -46,7 +46,52 @@ function loadAll() {
     if (typeof localStorage === 'undefined' || localStorage === null) return [];
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    // DEBUG: report loaded records summary (safe fields only)
+    try {
+      const safePreview = parsed.map(r => ({ field: r && r.field ? r.field : null, analysisId: r && r.analysisId ? r.analysisId : null, id: r && r.id ? r.id : null, createdAt: r && r.createdAt ? r.createdAt : null }));
+      console.info('[diagnostic] loadAll loaded count', safePreview.length);
+      // Print up to 20 records to avoid verbosity
+      console.info('[diagnostic] loadAll preview', safePreview.slice(0, 20));
+    } catch (e) {}
+
+    // Migration/deduplication: collapse records that share the same field + analysisId
+    // (only when analysisId is present). Keep the most recently created record.
+    const dedupMap = new Map();
+    const others = [];
+    for (const r of parsed) {
+      if (r && r.field && r.analysisId) {
+        const key = `${r.field}::${r.analysisId}`;
+        const existing = dedupMap.get(key);
+        if (!existing) {
+          dedupMap.set(key, r);
+        } else {
+          // keep the most recent createdAt
+          try {
+            const a = Date.parse(existing.createdAt || '');
+            const b = Date.parse(r.createdAt || '');
+            if (!Number.isFinite(a) || a < b) dedupMap.set(key, r);
+          } catch (e) {
+            // fallback: prefer the later one by string compare
+            if ((existing.createdAt || '') < (r.createdAt || '')) dedupMap.set(key, r);
+          }
+        }
+      } else {
+        // records without analysisId are preserved as-is
+        others.push(r);
+      }
+    }
+
+    // Combine deduped records and other records. Order isn't critical; place deduped first
+    const deduped = Array.from(dedupMap.values()).concat(others);
+    try {
+      console.info('[diagnostic] loadAll deduped count', deduped.length);
+      const keys = Array.from(dedupMap.keys()).slice(0, 20);
+      console.info('[diagnostic] loadAll dedup keys', keys);
+    } catch (e) {}
+    return deduped;
   } catch (e) {
     console.error('Could not load calibration records:', e);
     return [];
@@ -203,6 +248,23 @@ export function recordCalibrationFeedback(feedback) {
   };
 
   const all = loadAll();
+
+  // If analysisId is present, ensure only one record per field+analysisId.
+  if (rec.analysisId) {
+    let replaced = false;
+    const updated = all.map(existing => {
+      if (existing && existing.field === rec.field && existing.analysisId === rec.analysisId) {
+        replaced = true;
+        return rec; // replace
+      }
+      return existing;
+    });
+    if (!replaced) updated.push(rec);
+    saveAll(updated);
+    return rec;
+  }
+
+  // For records without analysisId, append as before
   all.push(rec);
   saveAll(all);
 

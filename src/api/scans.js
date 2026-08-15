@@ -54,3 +54,14 @@ export async function deleteScan(scanId) {
   if (!res.ok) throw new Error('failed to delete scan');
   return json(res);
 }
+
+export async function analyzeScan(scanId) {
+  const res = await fetch(`/api/scans/${scanId}/analyze`, { method: 'POST' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.error || 'analysis failed');
+    err.info = body;
+    throw err;
+  }
+  return json(res);
+}

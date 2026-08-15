@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { SCAN_SLOTS } from '../data/scanSlots';
 import * as scansApi from '../api/scans.js';
 
+const ACTIVE_SCAN_KEY = 'roomRaidActiveScanId';
+
 function makeEmptyScan() {
   const slots = Object.fromEntries(
     SCAN_SLOTS.map((s) => [s.id, []])
@@ -33,12 +35,36 @@ export function useScanState(initial = null) {
     async function load() {
       try {
         setLoading(true);
-        let current = await scansApi.getCurrentScan().catch(() => null);
+        // Try to restore a saved active scan id from localStorage first
+        let current = null;
+        try {
+          const saved = typeof localStorage !== 'undefined' && localStorage.getItem(ACTIVE_SCAN_KEY);
+          if (saved) {
+            try {
+              current = await scansApi.getScan(saved);
+              // persist (in case it exists) so we keep it stable
+              try { if (typeof localStorage !== 'undefined') localStorage.setItem(ACTIVE_SCAN_KEY, current.id); } catch (e) {}
+            } catch (e) {
+              // stale saved id — remove and fall back
+              try { if (typeof localStorage !== 'undefined') localStorage.removeItem(ACTIVE_SCAN_KEY); } catch (er) {}
+              current = null;
+            }
+          }
+        } catch (e) {
+          current = null;
+        }
+
+        if (!current) {
+          current = await scansApi.getCurrentScan().catch(() => null);
+        }
+
         if (!current) {
           current = await scansApi.createScan();
         }
         if (!mounted) return;
         setScan(current);
+        // persist active scan id locally
+        try { if (typeof localStorage !== 'undefined') localStorage.setItem(ACTIVE_SCAN_KEY, current.id); } catch (e) {}
       } catch (e) {
         setError(e);
       } finally {
@@ -53,12 +79,29 @@ export function useScanState(initial = null) {
     try {
       const s = await scansApi.getCurrentScan();
       setScan(s);
+      try { if (s && typeof localStorage !== 'undefined') localStorage.setItem(ACTIVE_SCAN_KEY, s.id); } catch (e) {}
       return s;
     } catch (e) {
       setError(e);
       throw e;
     }
   }, []);
+
+  const runAnalysis = useCallback(async () => {
+    if (!scan || !scan.id) throw new Error('no scan');
+    try {
+      const result = await scansApi.analyzeScan(scan.id);
+      // result: { analysis, scan }
+      // update local scan to reflect persisted analysis
+      const newScan = result.scan || (await scansApi.getCurrentScan());
+      setScan(newScan);
+      try { if (newScan && typeof localStorage !== 'undefined') localStorage.setItem(ACTIVE_SCAN_KEY, newScan.id); } catch (e) {}
+      return result.analysis;
+    } catch (e) {
+      setError(e);
+      throw e;
+    }
+  }, [scan]);
 
   const addImage = useCallback(async (slotId, file, meta) => {
     if (!scan || !scan.id) throw new Error('no scan');
@@ -67,6 +110,7 @@ export function useScanState(initial = null) {
       const result = await scansApi.uploadScanImage(scan.id, slotId, file, meta.width, meta.height);
       // result: { image, scan }
       setScan(result.scan);
+      try { if (result.scan && typeof localStorage !== 'undefined') localStorage.setItem(ACTIVE_SCAN_KEY, result.scan.id); } catch (e) {}
       return result.image;
     } catch (e) {
       setError(e);
@@ -79,6 +123,7 @@ export function useScanState(initial = null) {
     try {
       const result = await scansApi.deleteScanImage(scan.id, imageId);
       setScan(result.scan);
+      try { if (result.scan && typeof localStorage !== 'undefined') localStorage.setItem(ACTIVE_SCAN_KEY, result.scan.id); } catch (e) {}
       return true;
     } catch (e) {
       setError(e);
@@ -93,6 +138,7 @@ export function useScanState(initial = null) {
       // create fresh scan
       const fresh = await scansApi.createScan();
       setScan(fresh);
+      try { if (fresh && typeof localStorage !== 'undefined') localStorage.setItem(ACTIVE_SCAN_KEY, fresh.id); } catch (e) {}
       return fresh;
     } catch (e) {
       setError(e);
@@ -110,6 +156,7 @@ export function useScanState(initial = null) {
     removeImage,
     clearScan,
     refreshScan,
+    runAnalysis,
     totalImages,
   };
 }

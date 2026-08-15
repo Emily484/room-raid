@@ -21,6 +21,7 @@ import { useScanState } from "./hooks/useScanState";
 
 import {
   getNextQuest,
+  explainQuestScore,
 } from "./game/questEngine";
 import {
   useGameState,
@@ -312,6 +313,16 @@ function App() {
                   reason={getQuestReason(
                     currentQuest
                   )}
+                  explanation={
+                    currentQuest
+                      ? explainQuestScore(
+                          currentQuest,
+                          game.roomState,
+                          game.recentQuestIds,
+                          session
+                        )
+                      : null
+                  }
                   onComplete={
                     handleComplete
                   }

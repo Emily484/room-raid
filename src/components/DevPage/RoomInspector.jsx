@@ -5,7 +5,7 @@ import { calculateRoomConfidence } from "../../game/roomFields";
 import { SCAN_SLOTS } from '../../data/scanSlots';
 import './RoomInspector.css';
 import { generateProposals, getLatestCompletedAnalysis, isAnalysisStale, getEvidenceImages } from '../../game/reconciliation.js';
-import { recordCalibrationFeedback, summarizeCalibration, getCalibrationRule, saveCalibrationRule, getEffectiveCalibrationRule, clearCalibrationRule, loadCalibrationRules } from '../../game/calibration.js';
+import { recordCalibrationFeedback, summarizeCalibration, getCalibrationRule, saveCalibrationRule, getEffectiveCalibrationRule, clearCalibrationRule, loadCalibrationRules, MIN_CALIBRATION_SAMPLES } from '../../game/calibration.js';
 import { useEffect } from 'react';
 
 const correctionFactors = {
@@ -41,16 +41,37 @@ export default function RoomInspector({
   const stale = isAnalysisStale(scan, latestAnalysis);
   const proposals = latestAnalysis ? generateProposals({ roomState: game.roomState, analysis: latestAnalysis }) : [];
   const [calibrationInputs, setCalibrationInputs] = useState({});
-  const [calibrationSummary, setCalibrationSummary] = useState([]);
+  // Initialize summary synchronously so SSR and initial render reflect current persisted data
+  const [calibrationSummary, setCalibrationSummary] = useState(() => {
+    try {
+      const s = summarizeCalibration();
+      console.info('[diagnostic] RoomInspector init setCalibrationSummary', { count: s.length });
+      return s;
+    } catch (e) {
+      return [];
+    }
+  });
   const [rulesVersion, setRulesVersion] = useState(0);
 
   useEffect(() => {
-    setCalibrationSummary(summarizeCalibration());
+    try {
+      const s = summarizeCalibration();
+      console.info('[diagnostic] RoomInspector useEffect setCalibrationSummary', { count: s.length });
+      setCalibrationSummary(s);
+    } catch (e) {
+      setCalibrationSummary(summarizeCalibration());
+    }
   }, []);
 
   // helper to refresh rules-driven UI
   function refreshRules() {
-    setCalibrationSummary(summarizeCalibration());
+    try {
+      const s = summarizeCalibration();
+      console.info('[diagnostic] RoomInspector refreshRules setCalibrationSummary', { count: s.length });
+      setCalibrationSummary(s);
+    } catch (e) {
+      setCalibrationSummary(summarizeCalibration());
+    }
     setRulesVersion(v => v + 1);
   }
 
@@ -197,7 +218,27 @@ export default function RoomInspector({
                 {latestAnalysis ? (
                   <div>
                     {stale && (
-                      <div className="stale-warning">Analysis is stale because the scan changed after it was analyzed. Run a fresh analysis before applying changes.</div>
+                      <div className="stale-warning">
+                        <div>Analysis is stale because the scan changed after it was analyzed. Run a fresh analysis before applying changes.</div>
+                        <div style={{ marginTop: 8 }}>
+                          <button onClick={async () => {
+                            if (!scan || !scan.id) return;
+                            try {
+                              if (typeof scanState?.runAnalysis === 'function') {
+                                await scanState.runAnalysis();
+                                // refresh local summaries/rules
+                                setCalibrationSummary(summarizeCalibration());
+                                // force re-render of proposals by bumping rulesVersion
+                                setRulesVersion(v => v + 1);
+                              } else {
+                                alert('Run analysis not available');
+                              }
+                            } catch (err) {
+                              alert(String(err));
+                            }
+                          }}>Run fresh analysis</button>
+                        </div>
+                      </div>
                     )}
 
                     {proposals.map((p, idx) => {
@@ -256,29 +297,53 @@ export default function RoomInspector({
                             <div><strong>How good was this estimate?</strong></div>
                             <div style={{ marginTop: 6 }}>
                               <label style={{ marginRight: 8 }}>
-                                <input type="radio" name={`verdict-${idx}`} value="accurate" onChange={() => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), verdict: 'accurate' } }))} /> Accurate
+                                <input
+                                  type="radio"
+                                  name={`verdict-${p.field}`}
+                                  value="accurate"
+                                  checked={((calibrationInputs[p.field] && calibrationInputs[p.field].verdict) === 'accurate') || false}
+                                  onChange={() => setCalibrationInputs(current => ({ ...current, [p.field]: { ...(current[p.field]||{}), verdict: 'accurate' } }))}
+                                /> Accurate
                               </label>
                               <label style={{ marginRight: 8 }}>
-                                <input type="radio" name={`verdict-${idx}`} value="too_high" onChange={() => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), verdict: 'too_high' } }))} /> Too High
+                                <input
+                                  type="radio"
+                                  name={`verdict-${p.field}`}
+                                  value="too_high"
+                                  checked={((calibrationInputs[p.field] && calibrationInputs[p.field].verdict) === 'too_high') || false}
+                                  onChange={() => setCalibrationInputs(current => ({ ...current, [p.field]: { ...(current[p.field]||{}), verdict: 'too_high' } }))}
+                                /> Too High
                               </label>
                               <label style={{ marginRight: 8 }}>
-                                <input type="radio" name={`verdict-${idx}`} value="too_low" onChange={() => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), verdict: 'too_low' } }))} /> Too Low
+                                <input
+                                  type="radio"
+                                  name={`verdict-${p.field}`}
+                                  value="too_low"
+                                  checked={((calibrationInputs[p.field] && calibrationInputs[p.field].verdict) === 'too_low') || false}
+                                  onChange={() => setCalibrationInputs(current => ({ ...current, [p.field]: { ...(current[p.field]||{}), verdict: 'too_low' } }))}
+                                /> Too Low
                               </label>
                               <label>
-                                <input type="radio" name={`verdict-${idx}`} value="wrong_type" onChange={() => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), verdict: 'wrong_type' } }))} /> Wrong Type
+                                <input
+                                  type="radio"
+                                  name={`verdict-${p.field}`}
+                                  value="wrong_type"
+                                  checked={((calibrationInputs[p.field] && calibrationInputs[p.field].verdict) === 'wrong_type') || false}
+                                  onChange={() => setCalibrationInputs(current => ({ ...current, [p.field]: { ...(current[p.field]||{}), verdict: 'wrong_type' } }))}
+                                /> Wrong Type
                               </label>
                             </div>
 
                             <div style={{ marginTop: 6 }}>
                               <label>
                                 Corrected value (optional):
-                                <input type="number" value={(calibrationInputs[idx] && calibrationInputs[idx].correctedValue) ?? ''} onChange={(e) => setCalibrationInputs(current => ({ ...current, [idx]: { ...(current[idx]||{}), correctedValue: e.target.value === '' ? '' : Number(e.target.value) } }))} style={{ marginLeft: 6, width: 100 }} />
+                                <input type="number" value={(calibrationInputs[p.field] && calibrationInputs[p.field].correctedValue) ?? ''} onChange={(e) => setCalibrationInputs(current => ({ ...current, [p.field]: { ...(current[p.field]||{}), correctedValue: e.target.value === '' ? '' : Number(e.target.value) } }))} style={{ marginLeft: 6, width: 100 }} />
                               </label>
                             </div>
 
                             <div style={{ marginTop: 6 }}>
                               <button onClick={() => {
-                                const inpt = calibrationInputs[idx] || {};
+                                const inpt = calibrationInputs[p.field] || {};
                                 try {
                                   if (!inpt.verdict) {
                                     alert('Please select a verdict');
@@ -300,7 +365,7 @@ export default function RoomInspector({
                                   recordCalibrationFeedback(payload);
                                   setCalibrationSummary(summarizeCalibration());
                                   // reset inputs for this proposal
-                                  setCalibrationInputs(current => ({ ...current, [idx]: {} }));
+                                  setCalibrationInputs(current => ({ ...current, [p.field]: {} }));
                                 } catch (err) {
                                   alert(String(err));
                                 }
