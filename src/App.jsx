@@ -23,6 +23,7 @@ import {
   getNextQuest,
   explainQuestScore,
 } from "./game/questEngine";
+import { quests } from './data/quests';
 import {
   useGameState,
 } from "./hooks/useGameState";
@@ -57,6 +58,7 @@ function App() {
     setSelectedZone,
   ] = useState("random");
 
+  // currentQuestId is persisted in game state; local currentQuest derives from it
   const [
     currentQuest,
     setCurrentQuest,
@@ -89,37 +91,42 @@ function App() {
     applyEffectsToRoom,
     observeFieldInRoom,
     approveObservedField,
+    setCurrentQuestId,
   } = useGameState();
 
   // Shared scan state for /scan and the Room Inspector (Developer page).
   const scanState = useScanState();
 
+  // Hydrate persisted currentQuestId on mount (only once) and set currentQuest
   useEffect(() => {
-    const quest =
-      getNextQuest(
-        selectedZone,
-        game.roomState,
-        game.completedQuestIds,
-        game.recentQuestIds,
-        null,
-        session
-      );
+    const id = game.currentQuestId;
+    if (id) {
+      const q = quests.find((x) => x.id === id) || null;
+      // If quest no longer exists, clear persisted id and pick a new quest safely
+      if (!q) {
+        setCurrentQuestId(null);
+        const pick = getNextQuest(selectedZone, game.roomState, game.completedQuestIds, game.recentQuestIds, null, session);
+        if (pick) setCurrentQuestId(pick.id);
+        setCurrentQuest(pick);
+      } else {
+        setCurrentQuest(q);
+      }
+    } else {
+      // No persisted current quest: pick one safely and persist it
+      const pick = getNextQuest(selectedZone, game.roomState, game.completedQuestIds, game.recentQuestIds, null, session);
+      if (pick) setCurrentQuestId(pick.id);
+      setCurrentQuest(pick);
+    }
 
-    setCurrentQuest(quest);
     setDifficulty(0);
-
-    if (!quest) {
+    if (!game.currentQuestId && !currentQuest) {
       setMessage(
         "No quests are currently available in this territory."
       );
     }
-  }, [
-    selectedZone,
-    game.roomState,
-    game.completedQuestIds,
-    game.recentQuestIds,
-    session,
-  ]);
+    // Intentionally run only on mount/hydration; do not re-run on roomState changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function newQuest() {
     const quest =
@@ -133,6 +140,7 @@ function App() {
       );
 
     setCurrentQuest(quest);
+    setCurrentQuestId(quest ? quest.id : null);
     setDifficulty(0);
 
     setMessage(
@@ -158,6 +166,10 @@ function App() {
     setMessage(
       `⚔ Quest complete. +${reward.xpEarned} XP · ${reward.damage} damage dealt.`
     );
+    // Persist next quest selection (pick a new quest after completion)
+    const pick = getNextQuest(selectedZone, game.roomState, game.completedQuestIds, game.recentQuestIds, null, session);
+    setCurrentQuest(pick);
+    setCurrentQuestId(pick ? pick.id : null);
   }
 
   function handleFuckThis() {
@@ -203,6 +215,9 @@ function App() {
     setMessage(
       "The dungeon has been restored to its original horrible condition."
     );
+    // clear persisted active quest
+    setCurrentQuest(null);
+    setCurrentQuestId(null);
   }
 
   return (

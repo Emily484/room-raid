@@ -33,6 +33,7 @@ export function generateProposalForObservation({ roomState, observation, current
   if (observation.status === 'unknown' || observation.status === 'not_visible') {
     return {
       field,
+      currentValue: typeof currentValue === 'number' ? currentValue : getEstimated(roomState, field),
       recommendation: 'no_change',
       reason: 'Vision could not reliably observe this field.',
       observation: { ...observation },
@@ -49,15 +50,17 @@ export function generateProposalForObservation({ roomState, observation, current
   // none_observed handling
   if (observation.status === 'none_observed') {
     // Decide if zero is meaningful: for count-like fields, zero may be meaningful
+    const curr = typeof currentValue === 'number' ? currentValue : getEstimated(roomState, field);
+
     if (countLike.includes(field)) {
       const conf = observation.confidence ?? 0;
       if (conf >= config.autoSuggestMinimum) {
         return {
           field,
-          currentValue,
+          currentValue: curr,
           observation: { ...observation },
           proposedValue: 0,
-          delta: (0 - (currentValue ?? 0)),
+          delta: (0 - (curr ?? 0)),
           confidence: conf,
           source: 'vision',
           rationale: 'Vision reported none observed; proposing zero given sufficient confidence.',
@@ -69,6 +72,7 @@ export function generateProposalForObservation({ roomState, observation, current
 
     return {
       field,
+      currentValue: curr,
       recommendation: 'manual_review',
       reason: 'None observed but no confident numeric mapping available.',
       observation: { ...observation },
@@ -156,6 +160,7 @@ export function generateProposalForObservation({ roomState, observation, current
   // Qualitative/severity-only observations -> no automatic numeric proposal
   return {
     field,
+    currentValue: typeof currentValue === 'number' ? currentValue : getEstimated(roomState, field),
     recommendation: 'manual_review',
     reason: 'Qualitative observation only; no numeric proposal generated.',
     observation: { ...observation },

@@ -8,6 +8,7 @@ import { zones } from "../data/zones";
 import {
   defaultRoomState,
 } from "../data/defaultRoomState";
+import { normalizeRoomState } from '../game/roomFields.js';
 
 import {
   applyStateEffects,
@@ -38,6 +39,9 @@ function createInitialState() {
     completedQuestIds: [],
 
     recentQuestIds: [],
+
+  // Persisted active quest id to make the chosen quest survive reloads
+  currentQuestId: null,
 
     roomState: {
       ...defaultRoomState,
@@ -92,7 +96,9 @@ export function useGameState() {
 
             roomState: {
               ...defaultRoomState,
-              ...(sanitizeRoomState(parsed.roomState) ?? {}),
+              // Normalize persisted room state on hydration to ensure
+              // estimates/observations conform to canonical bounds.
+              ...(sanitizeRoomState(parsed.roomState) ? normalizeRoomState(sanitizeRoomState(parsed.roomState)) : {}),
             },
 
           bosses: {
@@ -108,6 +114,9 @@ export function useGameState() {
           recentQuestIds:
             parsed.recentQuestIds ??
             [],
+
+          currentQuestId:
+            parsed.currentQuestId ?? null,
         };
       } catch (error) {
         console.error(
@@ -131,6 +140,10 @@ export function useGameState() {
       JSON.stringify(toSave)
     );
   }, [game]);
+
+  function setCurrentQuestId(id) {
+    setGame((current) => ({ ...current, currentQuestId: id }));
+  }
 
   function completeQuest(
     quest,
@@ -323,5 +336,6 @@ export function useGameState() {
     applyEffectsToRoom,
     observeFieldInRoom,
     approveObservedField,
+    setCurrentQuestId,
   };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from 'react-router-dom';
 import { calculateDerivedState } from "../../game/derivedState";
 import { calculateRoomConfidence } from "../../game/roomFields";
@@ -250,13 +250,15 @@ export default function RoomInspector({
                         return overrides && overrides[p.field] ? overrides[p.field] : null;
                       })();
 
+                      const displayValue = (v) => (v === null || v === undefined) ? '—' : String(v);
+
                       return (
                         <div key={idx} className="reconciliation-proposal">
                           <div className="reconciliation-field"><strong>{p.field}</strong></div>
                           <div className="reconciliation-values">
-                            <div>Current: {String(p.currentValue)}</div>
-                            <div>Raw suggestion: {p.rawProposedValue === null || p.rawProposedValue === undefined ? '—' : String(p.rawProposedValue)}</div>
-                            <div>Calibrated suggestion: {p.proposedValue === null || p.proposedValue === undefined ? '—' : String(p.proposedValue)}</div>
+                            <div>Current: {displayValue(p.currentValue)}</div>
+                            <div>Raw suggestion: {p.rawProposedValue === null || p.rawProposedValue === undefined ? '—' : displayValue(p.rawProposedValue)}</div>
+                            <div>Calibrated suggestion: {p.proposedValue === null || p.proposedValue === undefined ? '—' : displayValue(p.proposedValue)}</div>
                             <div>Vision: {p.observation?.estimatedRange ? `${p.observation.estimatedRange.min}–${p.observation.estimatedRange.max}` : (p.observation?.percentEstimate ? `${p.observation.percentEstimate.min}–${p.observation.percentEstimate.max}%` : '')}</div>
                             <div className="reconciliation-confidence">Confidence: {p.confidence ?? '—'}</div>
                             <div className="reconciliation-reason">{p.rationale ?? p.reason}</div>
