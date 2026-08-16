@@ -259,7 +259,8 @@ export function getNextQuest(
   completedQuestIds = [],
   recentQuestIds = [],
   excludeId = null,
-  session = { energy: 'normal', preferredQuestMinutes: 10 }
+  session = { energy: 'normal', preferredQuestMinutes: 10 },
+  recentRejectedIds = []
 ) {
   let available =
     getAvailableQuests(
@@ -280,6 +281,19 @@ export function getNextQuest(
         (quest) =>
           quest.id !== excludeId
       );
+  }
+
+  // Exclude recently rejected quests when alternatives exist.
+  if (
+    recentRejectedIds &&
+    recentRejectedIds.length > 0 &&
+    available.length > 1
+  ) {
+    const rejectedSet = new Set(recentRejectedIds);
+    const filtered = available.filter((q) => !rejectedSet.has(q.id));
+    if (filtered.length > 0) {
+      available = filtered;
+    }
   }
 
   if (

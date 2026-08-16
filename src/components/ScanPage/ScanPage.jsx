@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./ScanPage.css";
 
 // scanState is now supplied by App and passed as a prop.
@@ -53,7 +53,7 @@ function ScanSlot({
 
       // Read dimensions client-side if possible and then upload
       let dims = { width: null, height: null };
-      try { dims = await readImageDimensions(file); } catch (e) {}
+  try { dims = await readImageDimensions(file); } catch (e) { void e; }
 
       const meta = {
         fileName: file.name,
@@ -205,6 +205,29 @@ export default function ScanPage({ scanState }) {
     clearScan,
   } = scanState;
 
+  const navigate = useNavigate();
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState(null);
+
+  async function handleAnalyze() {
+    setAnalysisError(null);
+    if (!scanState || typeof scanState.runAnalysis !== 'function') {
+      setAnalysisError('Analysis not available');
+      return;
+    }
+
+    try {
+      setAnalyzing(true);
+      await scanState.runAnalysis();
+      // After a successful analysis, navigate to Room Inspector to view reconciliation
+      navigate('/dev#room-inspector');
+    } catch (err) {
+      setAnalysisError(err.message || String(err));
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   return (
     <main className="scan-page">
       <header className="scan-hero">
@@ -228,7 +251,7 @@ export default function ScanPage({ scanState }) {
           <div>
             <span>PHOTOS ATTACHED</span>
             <strong>
-              {scan.status?.toUpperCase() ?? "DRAFT"}
+              {(scan && scan.status) ? String(scan.status).toUpperCase() : "DRAFT"}
             </strong>
           </div>
         </div>
@@ -267,7 +290,8 @@ export default function ScanPage({ scanState }) {
               key={slot.id}
               slot={slot}
               slotItems={
-                scan.slots[slot.id]
+                // guard: scan or scan.slots may be null during initial state
+                (scan && scan.slots && scan.slots[slot.id]) || []
               }
               addImage={addImage}
               removeImage={removeImage}
@@ -281,31 +305,42 @@ export default function ScanPage({ scanState }) {
           <div>
             <span>SCAN CREATED</span>
             <strong>
-              {new Date(
-                scan.createdAt
-              ).toLocaleString()}
+              {(scan && scan.createdAt) ? new Date(scan.createdAt).toLocaleString() : '—'}
             </strong>
           </div>
 
           <div>
             <span>LAST UPDATED</span>
             <strong>
-              {new Date(
-                scan.updatedAt
-              ).toLocaleString()}
+              {(scan && scan.updatedAt) ? new Date(scan.updatedAt).toLocaleString() : '—'}
             </strong>
           </div>
         </div>
 
         <div className="scan-footer-actions">
           {totalImages > 0 && (
-            <button
-              type="button"
-              className="scan-clear"
-              onClick={clearScan}
-            >
-              Clear Scan
-            </button>
+            <>
+              <button
+                type="button"
+                className="scan-clear"
+                onClick={clearScan}
+              >
+                Clear Scan
+              </button>
+
+              <button
+                type="button"
+                className="scan-analyze"
+                onClick={handleAnalyze}
+                disabled={analyzing}
+              >
+                {analyzing ? 'Analyzing…' : 'Analyze Scan'}
+              </button>
+
+              {analysisError && (
+                <div className="scan-error">{analysisError}</div>
+              )}
+            </>
           )}
 
           <Link

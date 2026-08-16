@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function PlayerStats({ xp, completedQuests }) {
   const level = Math.floor(xp / 100) + 1;
   const currentLevelXp = xp % 100;
