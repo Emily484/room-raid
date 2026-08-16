@@ -1,5 +1,7 @@
+import React, { useEffect } from 'react';
 import RoomStateDebug from "./RoomStateDebug.jsx";
 import RoomInspector from "./RoomInspector.jsx";
+import { useLocation } from 'react-router-dom';
 import { explainAllQuests } from "../../game/questEngine.js";
 import { calculateDerivedState } from "../../game/derivedState.js";
 import "./DeveloperPage.css";
@@ -65,7 +67,20 @@ export default function DeveloperPage({
   game,
   applyEffects,
   observeField,
+  approveObservedField,
+  scanState,
 }) {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location?.hash === '#room-inspector') {
+      // try to scroll the target into view
+      const el = document.getElementById('room-inspector');
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [location]);
   const session = {
     energy: "normal",
     preferredQuestMinutes: 10,
@@ -312,6 +327,8 @@ export default function DeveloperPage({
           game={game}
           applyEffects={applyEffects}
           observeField={observeField}
+          approveObservedField={approveObservedField}
+          scanState={scanState}
         />
       </section>
 
@@ -330,6 +347,11 @@ export default function DeveloperPage({
           roomState={
             game.roomState
           }
+          analysis={undefined}
+          onApproveProposal={(p) => {
+            if (!p || typeof p.proposedValue !== 'number') return;
+            approveObservedField && approveObservedField({ field: p.field, value: p.proposedValue, confidence: p.confidence, observedAt: new Date().toISOString() });
+          }}
         />
       </section>
     </main>

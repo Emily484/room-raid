@@ -1,3 +1,5 @@
+import React, { useState } from "react";
+
 export default function QuestCard({
   quest,
   difficulty,
@@ -5,7 +7,9 @@ export default function QuestCard({
   onFuckThis,
   onReroll,
   reason,
+  explanation,
 }) {
+  const [showExplanation, setShowExplanation] = useState(false);
   if (!quest) {
     return null;
   }
@@ -47,8 +51,36 @@ export default function QuestCard({
 
       {reason && (
         <div className="quest-reason">
-          <span>WHY THIS?</span>
-          {reason}
+          <button
+            className="why-this"
+            onClick={() =>
+              setShowExplanation((s) => !s)
+            }
+            aria-expanded={showExplanation}
+          >
+            <span>WHY THIS?</span>
+            <span className="reason-label">{reason}</span>
+          </button>
+
+          {showExplanation && explanation && (
+            <div className="quest-explanation">
+              {/* Render explanation data produced by questEngine.explainQuestScore */}
+              <div>
+                <strong>Total: </strong>
+                {explanation.total}
+              </div>
+              <div className="explanation-components">
+                {Object.entries(explanation.components || {}).map(
+                  ([k, v]) => (
+                    <div key={k}>
+                      <span>{k}: </span>
+                      <strong>{String(v)}</strong>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

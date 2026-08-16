@@ -26,3 +26,7 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# server uploads and data
+server/uploads/
+server/data/scans.json

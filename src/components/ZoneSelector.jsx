@@ -1,3 +1,4 @@
+import React from 'react';
 import { zones } from "../data/zones";
 
 export default function ZoneSelector({

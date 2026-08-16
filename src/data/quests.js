@@ -86,7 +86,8 @@ export const quests = [
 
     requirements: [
       {
-        key: "looseClothing",
+        // Require explicit dirty clothing evidence. Do not infer from looseClothing.
+        key: "dirtyClothing",
         operator: ">",
         value: 5,
       },

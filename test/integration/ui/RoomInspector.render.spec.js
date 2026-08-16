@@ -19,8 +19,14 @@ describe('RoomInspector component wiring', () => {
       },
     };
 
+    const { MemoryRouter } = await import('react-router-dom');
+
     const html = renderToString(
-      React.createElement(RoomInspector, { game, observeField: observeSpy })
+      React.createElement(
+        MemoryRouter,
+        null,
+        React.createElement(RoomInspector, { game, observeField: observeSpy })
+      )
     );
 
     // ensure the numeric estimated values are present in the rendered markup

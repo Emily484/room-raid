@@ -5,7 +5,8 @@ import { renderToString } from 'react-dom/server';
 describe('RoomInspector confidence UI', () => {
   it('renders high-confidence UI correctly', async () => {
     global.React = React;
-    const { default: RoomInspector } = await import('../../../src/components/DevPage/RoomInspector.jsx');
+  const { default: RoomInspector } = await import('../../../src/components/DevPage/RoomInspector.jsx');
+  const { MemoryRouter } = await import('react-router-dom');
 
     const game = {
       roomState: {
@@ -16,7 +17,7 @@ describe('RoomInspector confidence UI', () => {
       },
     };
 
-    const html = renderToString(React.createElement(RoomInspector, { game, applyEffects: () => {}, observeField: vi.fn() }));
+  const html = renderToString(React.createElement(MemoryRouter, null, React.createElement(RoomInspector, { game, applyEffects: () => {}, observeField: vi.fn() })));
 
   // rendered HTML may include comment nodes between text nodes; test for fragments
   // allow for React comment nodes (<!-- -->) between text nodes
@@ -27,9 +28,10 @@ describe('RoomInspector confidence UI', () => {
 
   it('renders low-confidence UI and VERIFY STATE button', async () => {
     global.React = React;
-    const { default: RoomInspector } = await import('../../../src/components/DevPage/RoomInspector.jsx');
-
-    const game = {
+  const { default: RoomInspector } = await import('../../../src/components/DevPage/RoomInspector.jsx');
+  const { MemoryRouter } = await import('react-router-dom');
+    
+  const game = {
       roomState: {
         clothingOnFloor: { estimated: 5, confidence: 0.48 },
         cardboard: { estimated: 3, confidence: 0.48 },
@@ -38,7 +40,7 @@ describe('RoomInspector confidence UI', () => {
       },
     };
 
-    const html = renderToString(React.createElement(RoomInspector, { game, applyEffects: () => {}, observeField: vi.fn() }));
+  const html = renderToString(React.createElement(MemoryRouter, null, React.createElement(RoomInspector, { game, applyEffects: () => {}, observeField: vi.fn() })));
 
   expect(html).toMatch(/Room model confidence:\s*(?:<!--.*?-->\s*)*48(?:<!--.*?-->\s*)*%/);
     expect(html).toContain('The dungeon may have shifted');

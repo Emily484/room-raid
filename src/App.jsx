@@ -1,3 +1,6 @@
+// React must be imported for the test environment to render JSX correctly.
+// eslint-disable-next-line no-unused-vars
+import React from 'react';
 import {
   useEffect,
   useState,
@@ -16,10 +19,14 @@ import QuestCard from "./components/QuestCard";
 import SessionControls from "./components/SessionControls";
 
 import DeveloperPage from "./components/DevPage/DeveloperPage";
+import ScanPage from "./components/ScanPage/ScanPage";
+import { useScanState } from "./hooks/useScanState";
 
 import {
   getNextQuest,
+  explainQuestScore,
 } from "./game/questEngine";
+import { quests } from './data/quests';
 import {
   useGameState,
 } from "./hooks/useGameState";
@@ -54,10 +61,21 @@ function App() {
     setSelectedZone,
   ] = useState("random");
 
-  const [
-    currentQuest,
-    setCurrentQuest,
-  ] = useState(null);
+  // Initialize authoritative game state before deriving any values from it.
+  const {
+    game,
+    completeQuestAndPickNext,
+    resetGame,
+    applyEffectsToRoom,
+    observeFieldInRoom,
+    approveObservedField,
+    setCurrentQuestId,
+    rejectCurrentQuestAndPickDifferent,
+    clearLastQuestChangeReason,
+  } = useGameState();
+
+  // Use authoritative currentQuestId from game as single source of truth.
+  const currentQuest = quests.find((x) => x.id === game.currentQuestId) || null;
 
   const [
     difficulty,
@@ -79,61 +97,64 @@ function App() {
     preferredQuestMinutes: 10,
   });
 
-  const {
-    game,
-    completeQuest,
-    resetGame,
-    applyEffectsToRoom,
-    observeFieldInRoom,
-  } = useGameState();
+  
 
+  // Shared scan state for /scan and the Room Inspector (Developer page).
+  const scanState = useScanState();
+
+  // Hydrate persisted currentQuestId on mount (only once) and set currentQuest
   useEffect(() => {
-    const quest =
-      getNextQuest(
-        selectedZone,
-        game.roomState,
-        game.completedQuestIds,
-        game.recentQuestIds,
-        null,
-        session
-      );
-
-    setCurrentQuest(quest);
-    setDifficulty(0);
-
-    if (!quest) {
-      setMessage(
-        "No quests are currently available in this territory."
-      );
+    const id = game.currentQuestId;
+    if (id) {
+      const q = quests.find((x) => x.id === id) || null;
+      if (!q) {
+        // if quest no longer exists, clear persisted id and choose a new one
+        setCurrentQuestId(null);
+        const pick = getNextQuest(selectedZone, game.roomState, game.completedQuestIds, game.recentQuestIds, null, session);
+        if (pick) setCurrentQuestId(pick.id);
+      } else {
+        // nothing: UI derives currentQuest from authoritative game state
+      }
+    } else {
+      // No persisted current quest: pick one safely and persist it
+      const pick = getNextQuest(selectedZone, game.roomState, game.completedQuestIds, game.recentQuestIds, null, session);
+      if (pick) setCurrentQuestId(pick.id);
     }
-  }, [
-    selectedZone,
-    game.roomState,
-    game.completedQuestIds,
-    game.recentQuestIds,
-    session,
-  ]);
+
+    if (!game.currentQuestId && !currentQuest) {
+      // Intentionally set mount-only user message based on hydrated authoritative state.
+      // This is safe (runs once on mount) and required to provide a helpful default.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMessage("No quests are currently available in this territory.");
+    }
+    // Intentionally run only on mount/hydration; do not re-run on roomState changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function newQuest() {
-    const quest =
-      getNextQuest(
-        selectedZone,
-        game.roomState,
-        game.completedQuestIds,
-        game.recentQuestIds,
-        currentQuest?.id,
-        session
-      );
-
-    setCurrentQuest(quest);
+    // Use authoritative reject-and-pick to avoid immediate loops.
+    // Trigger the authoritative reject+pick. UI will react to authoritative
+    // state via the `lastQuestChangeReason` flag.
+    rejectCurrentQuestAndPickDifferent(selectedZone, session);
     setDifficulty(0);
-
-    setMessage(
-      quest
-        ? "A different horror approaches."
-        : "No other quests are currently available."
-    );
   }
+
+  // React to authoritative quest-change reasons stored in the game state.
+  useEffect(() => {
+    const reason = game.lastQuestChangeReason;
+    if (!reason) return;
+
+    if (reason === 'no-alternative') {
+      setMessage('No other quests are available right now.');
+    } else if (reason === 'different') {
+      setMessage('A different horror approaches.');
+    }
+
+    // Acknowledge/clear the reason in authoritative state (keeps UI in sync
+    // and avoids repeated messages). Clearing is an authoritative write so
+    // we call the hook API which updates persisted state.
+    clearLastQuestChangeReason();
+  }, [game.lastQuestChangeReason, clearLastQuestChangeReason]);
 
   function handleComplete(
     variantKey
@@ -142,14 +163,21 @@ function App() {
       return;
     }
 
-    const reward =
-      completeQuest(
-        currentQuest,
-        variantKey
-      );
+    // Use the authoritative atomic API which will both apply the completion
+    // and choose the next quest inside the same state transition.
+    const activationId = game.currentQuestActivationId;
 
-    setMessage(
-      `⚔ Quest complete. +${reward.xpEarned} XP · ${reward.damage} damage dealt.`
+    // best-effort: show the deterministic reward immediately (variant xp/damage)
+    const variant = currentQuest.variants?.[variantKey] || {};
+    setMessage(`⚔ Quest complete. +${variant.xp ?? 0} XP · ${variant.damage ?? 0} damage dealt.`);
+
+    // Ask the authoritative state manager to complete this activation and pick next
+    completeQuestAndPickNext?.(
+      currentQuest.id,
+      variantKey,
+      activationId,
+      selectedZone,
+      session
     );
   }
 
@@ -196,6 +224,8 @@ function App() {
     setMessage(
       "The dungeon has been restored to its original horrible condition."
     );
+    // clear persisted active quest
+    setCurrentQuestId(null);
   }
 
   return (
@@ -210,6 +240,17 @@ function App() {
           }
         >
           Room Raid
+        </NavLink>
+
+        <NavLink
+          to="/scan"
+          className={({ isActive }) =>
+            isActive
+              ? "current"
+              : ""
+          }
+        >
+          Scan Room
         </NavLink>
 
         <NavLink
@@ -295,6 +336,16 @@ function App() {
                   reason={getQuestReason(
                     currentQuest
                   )}
+                  explanation={
+                    currentQuest
+                      ? explainQuestScore(
+                          currentQuest,
+                          game.roomState,
+                          game.recentQuestIds,
+                          session
+                        )
+                      : null
+                  }
                   onComplete={
                     handleComplete
                   }
@@ -350,8 +401,15 @@ function App() {
               applyEffects={
                 applyEffectsToRoom
               }
+              observeField={observeFieldInRoom}
+              approveObservedField={approveObservedField}
+              scanState={scanState}
             />
           }
+        />
+        <Route
+          path="/scan"
+          element={<ScanPage scanState={scanState} />}
         />
       </Routes>
     </>

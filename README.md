@@ -14,3 +14,23 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Development server (backend + frontend)
+
+Run the API server and the Vite dev server in separate terminals during development:
+
+Terminal 1:
+
+```bash
+npm run server:dev
+```
+
+Terminal 2:
+
+```bash
+npm run dev
+```
+
+The backend listens on port 3001 by default and Vite proxies /api requests to it.
+
+Uploaded images and scan metadata are stored under `server/uploads` and `server/data/scans.json`.

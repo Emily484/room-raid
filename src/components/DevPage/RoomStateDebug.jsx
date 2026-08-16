@@ -1,6 +1,7 @@
 import {
   calculateDerivedState,
 } from "../../game/derivedState";
+import { getField } from '../../game/roomFields.js';
 
 const concreteLabels = {
   clothingOnFloor: "Clothing on floor",
@@ -41,37 +42,50 @@ const derivedLabels = {
   bathroomCounterClear: "Bathroom counter clear",
 };
 
-function StateRow({
-  label,
-  value,
-}) {
-  const numericValue =
-    typeof value === "number"
-      ? value
-      : 0;
+function StateRow({ label, value, fieldKey }) {
+  // value may be a canonical field object (observed/estimated/confidence/lastObservedAt)
+  // or a simple derived numeric value. If value is not provided but fieldKey is,
+  // attempt to resolve from the surrounding roomState via getField.
+  let f = null;
+
+  if (value && typeof value === 'object' && ('estimated' in value || 'observed' in value)) {
+    f = value;
+  } else if (fieldKey) {
+    // fallback: try to resolve using the shared helper
+    f = getField(undefined, fieldKey); // getField handles undefined state by returning a canonical field
+  }
+
+  // If we still don't have a canonical field, but the provided value is a number,
+  // treat that as an estimated value for a derived row.
+  const isDerivedNumeric = typeof value === 'number' && !f;
+
+  const estimated = isDerivedNumeric ? value : (f && typeof f.estimated === 'number' ? f.estimated : 0);
+  const observed = isDerivedNumeric ? null : (f && typeof f.observed === 'number' ? f.observed : null);
+  const confidence = isDerivedNumeric ? null : (f && typeof f.confidence === 'number' ? f.confidence : null);
+  const lastObservedAt = isDerivedNumeric ? null : (f && f.lastObservedAt ? f.lastObservedAt : null);
+
+  const showBar = Number.isFinite(estimated) && estimated <= 100;
 
   return (
     <div className="debug-state-row">
-      <div className="debug-state-label">
-        {label}
-      </div>
+      <div className="debug-state-label">{label}</div>
 
-      <div className="debug-state-bar">
-        <div
-          className="debug-state-fill"
-          style={{
-            width: `${Math.max(
-              0,
-              Math.min(100, numericValue)
-            )}%`,
-          }}
-        />
-      </div>
+      {showBar ? (
+        <div className="debug-state-bar">
+          <div
+            className="debug-state-fill"
+            style={{ width: `${Math.max(0, Math.min(100, estimated))}%` }}
+          />
+        </div>
+      ) : (
+        <div className="debug-state-bar">(value &gt; 100 — relative bar omitted)</div>
+      )}
 
       <div className="debug-state-value">
-        {typeof value === "number"
-          ? value.toFixed(1)
-          : String(value)}
+        <div>Estimated: {Number.isFinite(estimated) ? Number(estimated).toFixed(1) : '—'}</div>
+        <div>Observed: {observed === null ? '—' : Number(observed).toFixed(1)}</div>
+        <div>Confidence: {typeof confidence === 'number' ? Math.round(confidence * 100) + '%' : '—'}</div>
+        <div>Last observed: {lastObservedAt ? new Date(lastObservedAt).toLocaleString() : 'Never'}</div>
       </div>
     </div>
   );
